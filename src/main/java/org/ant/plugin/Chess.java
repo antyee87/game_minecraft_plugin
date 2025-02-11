@@ -16,7 +16,7 @@ import java.util.*;
 public class Chess extends BoardGame implements ConfigurationSerializable {
     Location location;
     Location center;
-    final int size = 8;
+    static final int size = 8;
 
     Piece[][] board;
     boolean[][] can_move = new boolean[size][size];

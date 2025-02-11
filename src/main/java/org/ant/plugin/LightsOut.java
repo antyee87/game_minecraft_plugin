@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public class LightsOut extends BoardGame implements ConfigurationSerializable{
+    static int[][] vectors = new int[][]{{0,0},{1,0},{0,1},{-1,0},{0,-1}};
     Location location;
     Location center;
     Location display_location;
@@ -84,7 +85,6 @@ public class LightsOut extends BoardGame implements ConfigurationSerializable{
 
     @Override
     public boolean move(int x, int y) {
-        int[][] vectors = new int[][]{{0,0},{1,0},{0,1},{-1,0},{0,-1}};
         for(int[] vector : vectors){
             if(is_inside(x + vector[0], y + vector[1])){
                 board[x+vector[0]][y+vector[1]] = !board[x+vector[0]][y+vector[1]];

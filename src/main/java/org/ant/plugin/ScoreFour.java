@@ -85,8 +85,8 @@ public class ScoreFour implements ConfigurationSerializable {
     private boolean is_win(int x, int y, int z){
         for(int vx=-1; vx<=1; vx++){
             for(int vy=-1; vy<=1; vy++){
-                for(int vz=-1; vz<=1; vz++){
-                    if(vx == 0 && vy == 0 && vz == 0) continue;
+                for(int vz=0; vz<=1; vz++){
+                    if(x >= 0 && y >= 0 && z == 0) continue;
                     int[][] vectors = {{vx,vy,vz},{-vx,-vy,-vz}};
                     int counter = 0;
                     for(int[] vector : vectors){

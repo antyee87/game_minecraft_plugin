@@ -9,7 +9,6 @@ import io.papermc.paper.command.brigadier.*;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
-import org.bukkit.entity.Fish;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;

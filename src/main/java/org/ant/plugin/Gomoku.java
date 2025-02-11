@@ -10,12 +10,13 @@ import java.util.Map;
 import java.util.Optional;
 
 public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializable {
+    static int[][] vectors = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
     Location location;
     Location center;
     Location display_location;
     String display_align;
 
-    final int size = 15;
+    static final int size = 15;
 
     int[][] board;
     int player;
@@ -79,7 +80,6 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
     }
 
     private boolean is_win(int x, int y) {
-        int[][] vectors = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
         int[] counter = new int[4];
         for(int i = 0; i <8; i++){
             int check_x = x, check_y = y;

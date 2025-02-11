@@ -10,13 +10,13 @@ import java.util.Map;
 import java.util.Optional;
 
 public class Reversi extends TwoColorBoardGame implements ConfigurationSerializable {
+    static int[][] vectors = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
     Location location;
     Location center;
     Location display_location;
     String display_align;
 
-    final int size = 8;
-    int[][] vectors = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
+    static final int size = 8;
 
     int[][] board;
     boolean[][][] can_flip = new boolean[8][size][size];
