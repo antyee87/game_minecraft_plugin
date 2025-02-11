@@ -14,6 +14,7 @@ public class OperateListener implements Listener {
     Collection<Gomoku> gomoku_games = Game.getInstance().gomoku_games.values();
     Collection<Reversi> reversi_games = Game.getInstance().reversi_games.values();
     Collection<LightsOut> lightsOut_games = Game.getInstance().lightsOut_games.values();
+    Collection<ScoreFour> scoreFour_games = Game.getInstance().scoreFour_games.values();
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         Block block = event.getClickedBlock();
@@ -40,13 +41,24 @@ public class OperateListener implements Listener {
                         }
                     }
                 });
-                processGameClick(gomoku_games, block, point);
-                processGameClick(reversi_games, block, point);
-                processGameClick(lightsOut_games, block, point);
+                simpleGameClick(gomoku_games, block, point);
+                simpleGameClick(reversi_games, block, point);
+                simpleGameClick(lightsOut_games, block, point);
+                scoreFour_games.forEach((game) -> {
+                    Location board = game.location;
+                    int x= (point.getBlockX() - board.getBlockX())/2;
+                    int y= point.getBlockY() - board.getBlockY();
+                    int z= (point.getBlockZ() - board.getBlockZ())/2;
+                    if(Method.isInRange(y,0,4)){
+                        if(game.is_inside(x,z,0)){
+                            if(game.move(x, z))block.getWorld().playSound(block.getLocation(), Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f);
+                        }
+                    }
+                });
             }
         }
     }
-    private <T extends BoardGame> void processGameClick(Collection<T> games, Block block, Location point) {
+    private <T extends BoardGame> void simpleGameClick(Collection<T> games, Block block, Location point) {
         games.forEach(game -> {
             Location board = game.location;
             int x = point.getBlockX() - board.getBlockX();

@@ -16,7 +16,7 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     String display_align;
 
     final int size = 8;
-    int[][] vector = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
+    int[][] vectors = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
 
     int[][] board;
     boolean[][][] can_flip = new boolean[8][size][size];
@@ -71,13 +71,13 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
                     for(int i=0; i<8; i++){
                         int check_x = x, check_y = y;
                         boolean has_opponent = false;
-                        check_x += vector[i][0];
-                        check_y += vector[i][1];
+                        check_x += vectors[i][0];
+                        check_y += vectors[i][1];
                         while(is_inside(check_x, check_y)){
                             if(board[check_x][check_y] != player && Method.isInRange(board[check_x][check_y],1,2)) has_opponent = true;
                             else break;
-                            check_x += vector[i][0];
-                            check_y += vector[i][1];
+                            check_x += vectors[i][0];
+                            check_y += vectors[i][1];
                         }
                         if(has_opponent && is_inside(check_x, check_y) && !Method.isInRange(board[check_x][check_y],1,2)){
                             board[check_x][check_y] = 3;
@@ -97,13 +97,13 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
                 board[x][y] = player;
                 for(int i=0; i<8; i++){
                     int check_x = x, check_y = y;
-                    check_x += vector[i][0];
-                    check_y += vector[i][1];
+                    check_x += vectors[i][0];
+                    check_y += vectors[i][1];
                     while(can_flip[(i+4)%8][x][y] && is_inside(check_x, check_y)){
                         if(board[check_x][check_y] != player)board[check_x][check_y] = player;
                         else break;
-                        check_x += vector[i][0];
-                        check_y += vector[i][1];
+                        check_x += vectors[i][0];
+                        check_y += vectors[i][1];
                     }
                 }
                 for(int i=0; i<2;i++){

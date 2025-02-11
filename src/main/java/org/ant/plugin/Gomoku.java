@@ -79,13 +79,13 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
     }
 
     private boolean is_win(int x, int y) {
-        int[][] vector = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
+        int[][] vectors = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
         int[] counter = new int[4];
         for(int i = 0; i <8; i++){
             int check_x = x, check_y = y;
             for(int j = 1; j <=4; j++){
-                check_x += vector[i][0];
-                check_y += vector[i][1];
+                check_x += vectors[i][0];
+                check_y += vectors[i][1];
                 if(is_inside(check_x, check_y)){
                     if(board[check_x][check_y] == player){
                         counter[i%4]++;

@@ -28,6 +28,13 @@ public class Execute {
                     int size = ctx.getArgument("size", int.class);
                     Game.getInstance().lightsOut_games.put(name, new LightsOut(location, size, Optional.empty(), Optional.empty()));
                     break;
+                case "connect_four":
+                    String align = ctx.getArgument("align", String.class);
+                    Game.getInstance().connectFour_games.put(name, new ConnectFour(location, align));
+                    break;
+                case "score_four":
+                    Game.getInstance().scoreFour_games.put(name, new ScoreFour(location));
+                    break;
             }
         }
         return Command.SINGLE_SUCCESS;
@@ -81,6 +88,12 @@ public class Execute {
             case "lights_out":
                 if(Game.getInstance().lightsOut_games.containsKey(name))Game.getInstance().lightsOut_games.get(name).reset();
                 break;
+            case "connect_four":
+                if(Game.getInstance().connectFour_games.containsKey(name))Game.getInstance().connectFour_games.get(name).reset();
+                break;
+            case "score_four":
+                if(Game.getInstance().scoreFour_games.containsKey(name))Game.getInstance().scoreFour_games.get(name).reset();
+                break;
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -115,6 +128,18 @@ public class Execute {
                     Game.getInstance().lightsOut_games.remove(name);
                 }
                 break;
+            case "connect_four":
+                if(Game.getInstance().connectFour_games.containsKey(name)) {
+                    Game.getInstance().connectFour_games.get(name).reset();
+                    Game.getInstance().connectFour_games.remove(name);
+                }
+                break;
+            case "score_four":
+                if(Game.getInstance().scoreFour_games.containsKey(name)) {
+                    Game.getInstance().scoreFour_games.get(name).remove();
+                    Game.getInstance().scoreFour_games.remove(name);
+                }
+                break;
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -144,7 +169,21 @@ public class Execute {
                 if(Game.getInstance().gomoku_games.containsKey(name))return Game.getInstance().gomoku_games.get(name).player;
             case "reversi":
                 if(Game.getInstance().reversi_games.containsKey(name))return Game.getInstance().reversi_games.get(name).player;
+            case "connect_four":
+                if(Game.getInstance().connectFour_games.containsKey(name))return Game.getInstance().connectFour_games.get(name).player;
+            case "score_four":
+                if(Game.getInstance().scoreFour_games.containsKey(name))return Game.getInstance().scoreFour_games.get(name).player;
+
         }
         return -1;
+    }
+    
+    public static int connectFour_move(CommandContext<CommandSourceStack> ctx) {
+        String name = ctx.getArgument("name", String.class);
+        int line = ctx.getArgument("line", Integer.class);
+        if(Game.getInstance().connectFour_games.containsKey(name)) {
+            Game.getInstance().connectFour_games.get(name).move(line);
+        }
+        return Command.SINGLE_SUCCESS;
     }
 }
