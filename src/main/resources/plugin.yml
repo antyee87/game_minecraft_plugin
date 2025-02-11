@@ -1,0 +1,6 @@
+name: game
+version: '1.0-SNAPSHOT'
+main: org.ant.plugin.Game
+api-version: '1.21.4'
+authors: [ Antonio111 ]
+description: Ant development
