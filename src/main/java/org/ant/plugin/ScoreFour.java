@@ -11,11 +11,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ScoreFour implements ConfigurationSerializable {
-    Location location;
+    public Location location;
     Location center;
     int[][][] board;
     int[][] top;
-    int player;
+    public int player;
     boolean end;
     public ScoreFour(Location location) {
         this.location = location;

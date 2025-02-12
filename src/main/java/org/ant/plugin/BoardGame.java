@@ -8,7 +8,7 @@ import org.bukkit.inventory.meta.FireworkMeta;
 import java.util.Optional;
 
 public class BoardGame {
-    Location location;
+    public Location location;
     Location center;
     Location display_location;
     String display_align;
@@ -22,7 +22,7 @@ public class BoardGame {
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
     }
-    boolean move(int x, int z){return false;}
+    public boolean move(int x, int z){return false;}
     public void set_display(Location location, String display_align) {
         this.display_location = location;
         this.display_align = display_align;

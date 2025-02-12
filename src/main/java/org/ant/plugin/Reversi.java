@@ -20,7 +20,7 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
 
     int[][] board;
     boolean[][][] can_flip = new boolean[8][size][size];
-    int player;
+    public int player;
     boolean end;
     boolean moveable;
 
