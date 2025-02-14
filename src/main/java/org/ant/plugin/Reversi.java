@@ -15,17 +15,17 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     Location center;
     Location display_location;
     String display_align;
-
     static final int size = 8;
 
     int[][] board;
     boolean[][][] can_flip = new boolean[8][size][size];
+    int[] selected;
     int player;
     boolean end;
     boolean moveable;
 
     public Reversi(Location location, Optional<Location> display_location, Optional<String> display_align) {
-        super(location, display_location, display_align, 8);
+        super(location, display_location, display_align, Reversi.size);
         this.location = location;
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
@@ -51,6 +51,8 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
         board[4][4] = 1;
         board[3][4] = 2;
         board[4][3] = 2;
+        selected = null;
+        if(display_selected_task != null)display_selected_task.cancel();
         player = 1;
         end = false;
         find_can_move();
@@ -94,53 +96,61 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     public boolean move(int x, int y) {
         if(!end){
             if(board[x][y] == 3){
-                board[x][y] = player;
-                for(int i=0; i<8; i++){
-                    int check_x = x, check_y = y;
-                    check_x += vectors[i][0];
-                    check_y += vectors[i][1];
-                    while(can_flip[(i+4)%8][x][y] && is_inside(check_x, check_y)){
-                        if(board[check_x][check_y] != player)board[check_x][check_y] = player;
-                        else break;
+                if(selected == null || selected[0] != x || selected[1] != y){
+                    if(display_selected_task != null)display_selected_task.cancel();
+                    if(selected != null)display_single(selected[0], selected[1], 3);
+                    selected = new int[]{x,y};
+                    select(x, y, player, 3);
+                }
+                else {
+                    display_selected_task.cancel();
+                    board[x][y] = player;
+                    selected = null;
+                    for (int i = 0; i < 8; i++) {
+                        int check_x = x, check_y = y;
                         check_x += vectors[i][0];
                         check_y += vectors[i][1];
-                    }
-                }
-                for(int i=0; i<2;i++){
-                    if(player == 1)player = 2;
-                    else player = 1;
-                    find_can_move();
-                    if(moveable)break;
-                }
-                display(board);
-
-                if(!moveable){
-                    int black_piece = 0;
-                    int white_piece = 0;
-                    for(int i=0; i<size; i++){
-                        for(int j=0; j<size; j++){
-                            if(board[i][j] == 1)black_piece++;
-                            else if(board[i][j] == 2)white_piece++;
+                        while (can_flip[(i + 4) % 8][x][y] && is_inside(check_x, check_y)) {
+                            if (board[check_x][check_y] != player) board[check_x][check_y] = player;
+                            else break;
+                            check_x += vectors[i][0];
+                            check_y += vectors[i][1];
                         }
                     }
-                    Component component;
-                    if(black_piece > white_piece){
-                        component = Component.text("黑棋勝利").color(NamedTextColor.GRAY);
-                        firework(center,true);
+                    for (int i = 0; i < 2; i++) {
+                        if (player == 1) player = 2;
+                        else player = 1;
+                        find_can_move();
+                        if (moveable) break;
                     }
-                    else if(white_piece > black_piece){
-                        component = Component.text("白棋勝利").color(NamedTextColor.WHITE);
-                        firework(center,false);
+                    display(board);
+
+                    if (!moveable) {
+                        int black_piece = 0;
+                        int white_piece = 0;
+                        for (int i = 0; i < size; i++) {
+                            for (int j = 0; j < size; j++) {
+                                if (board[i][j] == 1) black_piece++;
+                                else if (board[i][j] == 2) white_piece++;
+                            }
+                        }
+                        Component component;
+                        if (black_piece > white_piece) {
+                            component = Component.text("黑棋勝利").color(NamedTextColor.GRAY);
+                            firework(center, true);
+                        } else if (white_piece > black_piece) {
+                            component = Component.text("白棋勝利").color(NamedTextColor.WHITE);
+                            firework(center, false);
+                        } else {
+                            component = Component.text("平手");
+                        }
+                        broadcast(component);
+                        component = Component.text(black_piece).color(NamedTextColor.GRAY)
+                            .append(Component.text(" : ").color(NamedTextColor.GREEN))
+                            .append(Component.text(white_piece).color(NamedTextColor.WHITE));
+                        broadcast(component);
+                        end = true;
                     }
-                    else{
-                        component = Component.text("平手");
-                    }
-                    broadcast(component);
-                    component = Component.text(black_piece).color(NamedTextColor.GRAY)
-                        .append(Component.text(" : ").color(NamedTextColor.GREEN))
-                        .append(Component.text(white_piece).color(NamedTextColor.WHITE));
-                    broadcast(component);
-                    end = true;
                 }
                 return true;
             }
