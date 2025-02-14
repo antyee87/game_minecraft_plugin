@@ -1,17 +1,10 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     java
-    kotlin("jvm") version "2.1.10"
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
-group = "org.ant"
-version = "1.0.1"
-
-base {
-    archivesName = "AntGame"
-}
+group = "org.little_game"
+version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -23,15 +16,8 @@ repositories {
     }
 }
 
-val ktlint: Configuration by configurations.creating
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
-
-    ktlint("com.pinterest.ktlint:ktlint-cli:1.5.0") {
-        attributes {
-            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
-        }
-    }
 }
 
 val javaVersion = JavaVersion.VERSION_21
@@ -41,23 +27,8 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(javaVersion.toString())
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.fromTarget(javaVersion.toString()))
-    }
-}
-
 tasks {
-    val ktlintCheck by registering(JavaExec::class) {
-        group = LifecycleBasePlugin.VERIFICATION_GROUP
-        description = "Check Kotlin code style."
-        classpath = ktlint
-        mainClass.set("com.pinterest.ktlint.Main")
-        args("src/**/*.kt", "**/*.kts", "!**/build/**")
-    }
-
     withType<JavaCompile>().configureEach {
-        dependsOn(ktlintCheck)
         options.encoding = "UTF-8"
         options.release.set(javaVersion.toString().toInt())
     }

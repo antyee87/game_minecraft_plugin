@@ -1,1 +1,1 @@
-rootProject.name = "AntGame"
+rootProject.name = "game"

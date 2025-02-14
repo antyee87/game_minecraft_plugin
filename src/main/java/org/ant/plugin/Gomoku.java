@@ -19,7 +19,7 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
     static final int size = 15;
 
     int[][] board;
-    public int player;
+    int player;
     boolean end;
 
     public Gomoku(Location location, Optional<Location> display_location, Optional<String> display_align) {

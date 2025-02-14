@@ -16,7 +16,7 @@ public class ConnectFour implements ConfigurationSerializable {
     String align;
     int[][] board;
     int[] top;
-    public int player;
+    int player;
     boolean end;
     public ConnectFour(Location location, String align) {
         this.location = location;

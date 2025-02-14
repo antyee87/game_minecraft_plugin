@@ -14,17 +14,17 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import java.util.*;
 
 public class Chess extends BoardGame implements ConfigurationSerializable {
-    public Location location;
+    Location location;
     Location center;
     static final int size = 8;
 
     Piece[][] board;
     boolean[][] can_move = new boolean[size][size];
     boolean[][] attacked = new boolean[size][size];
-    public int player;
+    int player;
     Piece selected;
     Piece passable;
-    public Piece promotable;
+    Piece promotable;
     Piece[] king = new Piece[2];
     boolean end;
 
