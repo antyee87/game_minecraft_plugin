@@ -2,8 +2,10 @@ package org.ant.plugin;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,15 +17,15 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
     Location center;
     Location display_location;
     String display_align;
-
     static final int size = 15;
 
     int[][] board;
+    int[] selected;
     int player;
     boolean end;
 
     public Gomoku(Location location, Optional<Location> display_location, Optional<String> display_align) {
-        super(location, display_location, display_align, 15);
+        super(location, display_location, display_align, Gomoku.size);
         this.location = location;
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
@@ -45,35 +47,47 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
 
     public void reset(){
         board = new int[size][size];
+        selected = null;
+        if(display_selected_task != null)display_selected_task.cancel();
         player = 1;
-        display(board);
         end = false;
+        display(board);
     }
 
     @Override
     public boolean move(int x, int y) {
         if(!end && board[x][y] == 0){
-            board[x][y] = player;
-            if(is_win(x,y)){
-                Component component;
-                if (player == 1) {
-                    component = Component.text("黑棋勝利").color(NamedTextColor.GRAY);
-                    firework(center,true);
-                }
-                else{
-                    component = Component.text("白棋勝利").color(NamedTextColor.WHITE);
-                    firework(center,false);
-                }
-                broadcast(component);
-                end = true;
+            if(selected == null || selected[0] != x || selected[1] != y){
+                if(display_selected_task != null)display_selected_task.cancel();
+                if(selected != null)display_single(selected[0], selected[1], 0);
+                selected = new int[]{x,y};
+                select(x, y, player, 0);
             }
-            if(is_tie()){
-                broadcast("平手");
-                end = true;
+            else{
+                display_selected_task.cancel();
+                board[x][y] = player;
+                selected = null;
+                if(is_win(x,y)){
+                    Component component;
+                    if (player == 1) {
+                        component = Component.text("黑棋勝利").color(NamedTextColor.GRAY);
+                        firework(center,true);
+                    }
+                    else{
+                        component = Component.text("白棋勝利").color(NamedTextColor.WHITE);
+                        firework(center,false);
+                    }
+                    broadcast(component);
+                    end = true;
+                }
+                if(is_tie()){
+                    broadcast("平手");
+                    end = true;
+                }
+                display(board);
+                if(player == 1)player = 2;
+                else player = 1;
             }
-            display(board);
-            if(player == 1)player = 2;
-            else player = 1;
             return true;
         }
         return false;

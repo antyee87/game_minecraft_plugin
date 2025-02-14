@@ -1,6 +1,7 @@
 package org.ant.plugin;
 
 import org.bukkit.*;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Optional;
 
@@ -10,6 +11,10 @@ public class TwoColorBoardGame extends  BoardGame {
     Location display_location;
     String display_align;
     int size;
+
+    int[] selected_point;
+    BukkitTask display_selected_task;
+
     public TwoColorBoardGame(Location location, Optional<Location> display_location, Optional<String> display_align, int size) {
         super(location, display_location, display_align, size);
         this.location = location;
@@ -45,30 +50,44 @@ public class TwoColorBoardGame extends  BoardGame {
         return Material.AIR;
     }
 
+    boolean visible ;
+    public void select(int x, int y, int player, int init){
+        selected_point = new int[]{x, y};
+        visible = true;
+        display_selected_task = Bukkit.getScheduler().runTaskTimer(Game.getInstance(), () ->{
+            if(visible)display_single(x, y, player);
+            else display_single(x, y, init);
+            visible = !visible;
+        }, 0, 10);
+    }
+
     public void display(int[][] board){
         for(int x = 0; x < size; x++){
             for(int y = 0; y < size; y++){
-                location.getWorld().setType(
-                    location.getBlockX()+x,
-                    location.getBlockY(),
-                    location.getBlockZ()+y,
-                    material(board[x][y]));
-                if(display_location != null){
-                    if(display_align.equals("x")){
-                        display_location.getWorld().setType(
-                            display_location.getBlockX()+x,
-                            display_location.getBlockY()+y,
-                            display_location.getBlockZ(),
-                            material(board[x][y]));
-                    }
-                    else if(display_align.equals("z")){
-                        display_location.getWorld().setType(
-                            display_location.getBlockX(),
-                            display_location.getBlockY()+x,
-                            display_location.getBlockZ()+y,
-                            material(board[x][y]));
-                    }
-                }
+                display_single(x, y, board[x][y]);
+            }
+        }
+    }
+    public void display_single(int x, int y, int player){
+        location.getWorld().setType(
+            location.getBlockX()+x,
+            location.getBlockY(),
+            location.getBlockZ()+y,
+            material(player));
+        if(display_location != null){
+            if(display_align.equals("x")){
+                display_location.getWorld().setType(
+                    display_location.getBlockX()+x,
+                    display_location.getBlockY()+y,
+                    display_location.getBlockZ(),
+                    material(player));
+            }
+            else if(display_align.equals("z")){
+                display_location.getWorld().setType(
+                    display_location.getBlockX(),
+                    display_location.getBlockY()+x,
+                    display_location.getBlockZ()+y,
+                    material(player));
             }
         }
     }

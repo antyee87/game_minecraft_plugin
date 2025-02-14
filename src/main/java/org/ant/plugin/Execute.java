@@ -159,31 +159,4 @@ public class Execute {
         }
         return Command.SINGLE_SUCCESS;
     }
-
-    public static int get_player(CommandContext<CommandSourceStack> ctx, String mode) {
-        String name = ctx.getArgument("name", String.class);
-        switch (mode) {
-            case "chess":
-                if(Game.getInstance().chess_games.containsKey(name))return Game.getInstance().chess_games.get(name).player + 1;
-            case "gomoku":
-                if(Game.getInstance().gomoku_games.containsKey(name))return Game.getInstance().gomoku_games.get(name).player;
-            case "reversi":
-                if(Game.getInstance().reversi_games.containsKey(name))return Game.getInstance().reversi_games.get(name).player;
-            case "connect_four":
-                if(Game.getInstance().connectFour_games.containsKey(name))return Game.getInstance().connectFour_games.get(name).player;
-            case "score_four":
-                if(Game.getInstance().scoreFour_games.containsKey(name))return Game.getInstance().scoreFour_games.get(name).player;
-
-        }
-        return -1;
-    }
-    
-    public static int connectFour_move(CommandContext<CommandSourceStack> ctx) {
-        String name = ctx.getArgument("name", String.class);
-        int line = ctx.getArgument("line", Integer.class);
-        if(Game.getInstance().connectFour_games.containsKey(name)) {
-            Game.getInstance().connectFour_games.get(name).move(line);
-        }
-        return Command.SINGLE_SUCCESS;
-    }
 }

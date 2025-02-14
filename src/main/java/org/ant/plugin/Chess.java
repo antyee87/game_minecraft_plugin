@@ -104,12 +104,12 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
         for(int x=0; x<size; x++){
             for(int y=0; y<size; y++){
                 if((x+y) % 2 ==0){
-                    this.location.clone().add(x,0,y).getBlock().setType(Material.STRIPPED_OAK_WOOD);
-                    if(can_move[x][y])this.location.clone().add(x,0,y).getBlock().setType(Material.OAK_WOOD);
+                    this.location.clone().add(x,0,y).getBlock().setType(Material.STRIPPED_SPRUCE_WOOD);
+                    if(can_move[x][y])this.location.clone().add(x,0,y).getBlock().setType(Material.STRIPPED_SPRUCE_LOG);
                 }
                 else{
                     this.location.clone().add(x,0,y).getBlock().setType(Material.STRIPPED_BIRCH_WOOD);
-                    if(can_move[x][y])this.location.clone().add(x,0,y).getBlock().setType(Material.BIRCH_WOOD);
+                    if(can_move[x][y])this.location.clone().add(x,0,y).getBlock().setType(Material.STRIPPED_BIRCH_LOG);
                 }
                 if(board[x][y] != null){
                     Block block = this.location.clone().add(x,1,y).getBlock();
@@ -131,42 +131,27 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
     private void find_move(Piece selected, boolean[][] result) {
         int owner = selected.owner;
         int type = selected.type;
+        int x = selected.x, y = selected.y;
         int[][] rook_vector = new int[][]{{1,0},{0,1},{-1,0},{0,-1}};
         int[][] bishop_vector = new int[][]{{1,1},{1,-1},{-1,-1},{-1,1}};
         int[][] knight_vector = new int[][]{{1,2},{2,1},{1,-2},{2,-1},{-1,-2},{-2,-1},{-1,2},{-2,1}};
-        int x = selected.x, y = selected.y;
         if(type == 1) {
-            if(owner == 0) {
-                if(result != attacked) {
-                    if (board[x + 1][y] == null) {
-                        result[x + 1][y] = true;
-                        if (!selected.had_moved && board[x + 2][y] == null) result[x + 2][y] = true;
-                    }
-                    if (is_exist(x + 1, y + 1) && board[x + 1][y + 1].owner != owner) result[x + 1][y + 1] = true;
-                    if (is_exist(x + 1, y - 1) && board[x + 1][y - 1].owner != owner) result[x + 1][y - 1] = true;
-                    if (is_exist(x, y + 1) && board[x][y + 1].owner != owner && board[x][y + 1] == passable) result[x + 1][y + 1] = true;
-                    if (is_exist(x, y - 1) && board[x][y - 1].owner != owner && board[x][y - 1] == passable) result[x + 1][y - 1] = true;
+            int forward;
+            if(owner == 0) forward = x + 1;
+            else forward = x - 1;
+            if(result != attacked) {
+                if (board[forward][y] == null) {
+                    result[forward][y] = true;
+                    if (!selected.had_moved && board[forward * 2 - x][y] == null) result[forward * 2 - x][y] = true;
                 }
-                else{
-                    if(is_inside(x+1,y+1))result[x + 1][y + 1] = true;
-                    if(is_inside(x+1,y-1))result[x + 1][y - 1] = true;
-                }
+                if (is_exist(forward, y + 1) && board[forward][y + 1].owner != owner) result[forward][y + 1] = true;
+                if (is_exist(forward, y - 1) && board[forward][y - 1].owner != owner) result[forward][y - 1] = true;
+                if (is_exist(x, y + 1) && board[x][y + 1].owner != owner && board[x][y + 1] == passable) result[forward][y + 1] = true;
+                if (is_exist(x, y - 1) && board[x][y - 1].owner != owner && board[x][y - 1] == passable) result[forward][y - 1] = true;
             }
             else{
-                if(result != attacked){
-                    if (board[x - 1][y] == null) {
-                        result[x - 1][y] = true;
-                        if (!selected.had_moved && board[x - 2][y] == null) result[x - 2][y] = true;
-                    }
-                    if (is_exist(x - 1, y + 1) && board[x - 1][y + 1].owner != owner) result[x - 1][y + 1] = true;
-                    if (is_exist(x - 1, y - 1) && board[x - 1][y - 1].owner != owner) result[x - 1][y - 1] = true;
-                    if (is_exist(x, y + 1) && board[x][y + 1].owner != owner && board[x][y + 1] == passable) result[x - 1][y + 1] = true;
-                    if (is_exist(x, y - 1) && board[x][y - 1].owner != owner && board[x][y - 1] == passable) result[x - 1][y - 1] = true;
-                }
-                else{
-                    if(is_inside(x-1,y+1))result[x - 1][y + 1] = true;
-                    if(is_inside(x-1,y-1))result[x - 1][y - 1] = true;
-                }
+                if(is_inside(forward, y+1))result[forward][y + 1] = true;
+                if(is_inside(forward, y-1))result[forward][y - 1] = true;
             }
         }
         else if(type == 2){
@@ -287,17 +272,17 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
                             if(x == 7)promotable = selected;
                         }
                         else{
-                            if(board[x+1][y] == passable && board[x-1][y] != null && board[x-1][y].owner != player)board[x+1][y] = null;
+                            if(board[x+1][y] == passable && board[x+1][y] != null && board[x+1][y].owner != player)board[x+1][y] = null;
                             if(x == 0)promotable = selected;
                         }
                     }
                     else if(type == 6){
                         if(!board[selected.x][selected.y].had_moved){
-                            if(board[x][y+1] != null && !board[x][y+1].had_moved){
+                            if(board[x][y+1] != null && board[x][y+1].type == 2 && !board[x][y+1].had_moved){
                                 board[x][y-1] = board[x][y+1];
                                 board[x][y+1] = null;
                             }
-                            if(board[x][y-2] != null && !board[x][y-2].had_moved){
+                            if(board[x][y-2] != null && board[x][y-2].type == 2 && !board[x][y-2].had_moved){
                                 board[x][y+1] = board[x][y-2];
                                 board[x][y-2] = null;
                             }
@@ -352,7 +337,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
             Block block = this.location.clone().add(x,i,y).getBlock();
             block.setType(Material.AIR);
         }
-        promotable.piece = player * 10 + choice;
+        promotable.setPiece(player * 10 + choice);
         promotable = null;
         switch_player();
         display();
@@ -422,11 +407,8 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
         int x, y;
         boolean had_moved = false;
         public Piece(int piece, int x, int y) {
-            this.piece = piece;
-            this.owner = piece / 10;
-            this.type = piece % 10;
-            this.x = x;
-            this.y = y;
+            setPiece(piece);
+            setPos(x, y);
         }
         public PlayerProfile profile(){
             return Chess.profile(this.piece);
@@ -434,6 +416,11 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
         public void setPos(int x, int y){
             this.x = x;
             this.y = y;
+        }
+        public void setPiece(int piece){
+            this.piece = piece;
+            this.owner = piece / 10;
+            this.type = piece % 10;
         }
     }
 }

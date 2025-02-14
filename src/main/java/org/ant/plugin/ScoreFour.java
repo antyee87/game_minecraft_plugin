@@ -3,18 +3,21 @@ package org.ant.plugin;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
-import org.bukkit.entity.Firework;
-import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class ScoreFour implements ConfigurationSerializable {
+public class ScoreFour implements ConfigurationSerializable, BasicValue {
     Location location;
     Location center;
+
     int[][][] board;
     int[][] top;
+    int[] selected;
+    BukkitTask display_selected_task;
     int player;
     boolean end;
     public ScoreFour(Location location) {
@@ -23,6 +26,12 @@ public class ScoreFour implements ConfigurationSerializable {
         reset();
     }
     public void reset(){
+        board = new int[4][4][4];
+        top = new int[4][4];
+        selected = null;
+        if(display_selected_task != null)display_selected_task.cancel();
+        player = 1;
+        end = false;
         for(int x=0; x<4; x++){
             for(int y=0; y<4; y++){
                 for(int z=0; z<5; z++){
@@ -31,10 +40,6 @@ public class ScoreFour implements ConfigurationSerializable {
                 }
             }
         }
-        board = new int[4][4][4];
-        top = new int[4][4];
-        player = 1;
-        end = false;
     }
     public void remove(){
         for(int x=0; x<4; x++){
@@ -46,36 +51,49 @@ public class ScoreFour implements ConfigurationSerializable {
         }
     }
 
-    private Material material(int player) {
-        if(player == 1)return Material.YELLOW_CONCRETE_POWDER;
-        else return Material.RED_CONCRETE_POWDER;
-    }
+    boolean visible = true;
     public boolean move(int x, int y){
         if(!end && top[x][y] < 4){
-            board[x][y][top[x][y]] = player;
-            location.clone().add(2*x, 4, 2*y).getBlock().setType(material(player));
-            if(is_win(x,y,top[x][y])){
-                Component component;
-                if(player == 1){
-                    component = Component.text("黃色勝利").color(NamedTextColor.YELLOW);
-                    firework(center, true);
-                }
-                else{
-                    component = Component.text("紅色勝利").color(NamedTextColor.RED);
-                    firework(center, false);
-                }
-                broadcast(component);
-                end = true;
-            }
-            else if(is_tie()){
-                broadcast("平手");
-                end = true;
+            if(selected == null || selected[0] != x || selected[1] != y){
+                if(display_selected_task != null)display_selected_task.cancel();
+                if(selected != null)location.clone().add(selected[0]*2, 0, selected[1]*2).getBlock().setType(Material.IRON_BLOCK);
+                selected = new int[]{x,y};
+                visible = true;
+                display_selected_task = Bukkit.getScheduler().runTaskTimer(Game.getInstance(), () ->{
+                    Block selected_block = location.clone().add(x*2,0,y*2).getBlock();
+                    if(visible)selected_block.setType(Method.yellow_red_material(player));
+                    else selected_block.setType(Material.IRON_BLOCK);
+                    visible = !visible;
+                }, 0, 10);
             }
             else {
-                top[x][y]++;
-                if (player == 1) player = 2;
-                else player = 1;
+                display_selected_task.cancel();
+                location.clone().add(x*2,0,y*2).getBlock().setType(Material.IRON_BLOCK);
+                board[x][y][top[x][y]] = player;
+                selected = null;
+
+                location.clone().add(2 * x, 4, 2 * y).getBlock().setType(Method.yellow_red_material(player));
+                if (is_win(x, y, top[x][y])) {
+                    Component component;
+                    if (player == 1) {
+                        component = Component.text("黃色勝利").color(NamedTextColor.YELLOW);
+                        Method.yellow_red_firework(center, true);
+                    } else {
+                        component = Component.text("紅色勝利").color(NamedTextColor.RED);
+                        Method.yellow_red_firework(center, false);
+                    }
+                    Method.broadcast(component, center, 7);
+                    end = true;
+                } else if (is_tie()) {
+                    Method.broadcast("平手", center, 7);
+                    end = true;
+                } else {
+                    top[x][y]++;
+                    if (player == 1) player = 2;
+                    else player = 1;
+                }
             }
+            return true;
         }
         return false;
     }
@@ -120,41 +138,20 @@ public class ScoreFour implements ConfigurationSerializable {
         }
         return true;
     }
-    private void broadcast(Object message){
-        if(message instanceof String){
-            Bukkit.getOnlinePlayers().forEach(player -> {
-                if(center.distance(player.getLocation()) <= 6.5){
-                    player.sendMessage((String)message);
-                }
-            });
-        }
-        else if(message instanceof Component){
-            Bukkit.getOnlinePlayers().forEach(player -> {
-                if(center.distance(player.getLocation()) <= 6.5){
-                    player.sendMessage((Component)message);
-                }
-            });
-        }
+
+    @Override
+    public Location getLocation() {
+        return location;
     }
-    public void firework(Location location, boolean isYellow){
-        Firework firework = location.getWorld().spawn(location.clone().add(0,1,0), Firework.class);
-        FireworkMeta meta = firework.getFireworkMeta();
 
-        Color[] mainColors = isYellow ? new Color[]{Color.YELLOW, Color.NAVY} : new Color[]{Color.RED, Color.NAVY};
-        Color fadeColor = Color.fromRGB(14602026);
+    @Override
+    public Location getCenter() {
+        return center;
+    }
 
-        FireworkEffect effect = FireworkEffect.builder()
-            .with(FireworkEffect.Type.BALL_LARGE)
-            .withColor(mainColors)
-            .withFade(fadeColor)
-            .trail(true)
-            .flicker(true)
-            .build();
-
-        meta.addEffect(effect);
-        meta.setPower(2);
-
-        firework.setFireworkMeta(meta);
+    @Override
+    public int getSize() {
+        return 7;
     }
 
     public Map<String, Object> serialize() {

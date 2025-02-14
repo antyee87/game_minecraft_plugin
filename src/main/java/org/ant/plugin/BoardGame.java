@@ -1,6 +1,5 @@
 package org.ant.plugin;
 
-import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.entity.Firework;
 import org.bukkit.inventory.meta.FireworkMeta;
@@ -69,20 +68,7 @@ public class BoardGame {
         display_align = null;
     }
     public void broadcast(Object message){
-        if(message instanceof String){
-            Bukkit.getOnlinePlayers().forEach(player -> {
-                if(center.distance(player.getLocation()) <= (double)size/2+3){
-                    player.sendMessage((String)message);
-                }
-            });
-        }
-        else if(message instanceof Component){
-            Bukkit.getOnlinePlayers().forEach(player -> {
-                if(center.distance(player.getLocation()) <= (double)size/2+3){
-                    player.sendMessage((Component)message);
-                }
-            });
-        }
+        Method.broadcast(message, center, size);
     }
     public void firework(Location location, boolean isBlack){
         Firework firework = location.getWorld().spawn(location.clone().add(0,1,0), Firework.class);
@@ -100,7 +86,7 @@ public class BoardGame {
             .build();
 
         meta.addEffect(effect);
-        meta.setPower(2);
+        meta.setPower(1);
 
         firework.setFireworkMeta(meta);
         //黑 summon firework_rocket ~ ~1 ~ {LifeTime:20,FireworksItem:{id:"minecraft:firework_rocket",count:1,components:{"minecraft:fireworks":{explosions:[{shape:"large_ball",has_twinkle:true,has_trail:true,colors:[I;11250603,4408131],fade_colors:[I;14602026]}]}}}}
