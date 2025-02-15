@@ -6,6 +6,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.Lightable;
 import org.bukkit.block.data.type.CopperBulb;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class LightsOut extends BoardGame implements ConfigurationSerializable{
         for (int x = 0; x < size; x++) {
             for (int y = 0; y < size; y++) {
                 int random = (int) (Math.round(Math.random()));
-                if(random == 0) move(x, y);
+                if(random == 0) move(x, y, null);
             }
         }
         display();
@@ -84,7 +85,7 @@ public class LightsOut extends BoardGame implements ConfigurationSerializable{
     }
 
     @Override
-    public boolean move(int x, int y) {
+    public boolean move(int x, int y, Player minecraft_player) {
         for(int[] vector : vectors){
             if(is_inside(x + vector[0], y + vector[1])){
                 board[x+vector[0]][y+vector[1]] = !board[x+vector[0]][y+vector[1]];

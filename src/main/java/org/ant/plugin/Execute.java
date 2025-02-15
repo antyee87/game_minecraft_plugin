@@ -35,6 +35,9 @@ public class Execute {
                 case "score_four":
                     Game.getInstance().scoreFour_games.put(name, new ScoreFour(location));
                     break;
+                case "go":
+                    Game.getInstance().go_games.put(name, new Go(location, Optional.empty(), Optional.empty()));
+                    break;
             }
         }
         return Command.SINGLE_SUCCESS;
@@ -68,6 +71,13 @@ public class Execute {
                         lightsOut.set_display(location, align);
                     }
                     break;
+                case "go":
+                    if(Game.getInstance().go_games.containsKey(name)) {
+                        Go go = Game.getInstance().go_games.get(name);
+                        go.remove_display();
+                        go.set_display(location, align);
+                    }
+                    break;
             }
         }
         return Command.SINGLE_SUCCESS;
@@ -93,6 +103,9 @@ public class Execute {
                 break;
             case "score_four":
                 if(Game.getInstance().scoreFour_games.containsKey(name))Game.getInstance().scoreFour_games.get(name).reset();
+                break;
+            case "go":
+                if(Game.getInstance().go_games.containsKey(name))Game.getInstance().go_games.get(name).reset();
                 break;
         }
         return Command.SINGLE_SUCCESS;
@@ -140,6 +153,13 @@ public class Execute {
                     Game.getInstance().scoreFour_games.remove(name);
                 }
                 break;
+            case "go":
+                if(Game.getInstance().go_games.containsKey(name)) {
+                    Game.getInstance().go_games.get(name).remove();
+                    Game.getInstance().go_games.get(name).remove_display();
+                    Game.getInstance().go_games.remove(name);
+                }
+                break;
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -155,6 +175,9 @@ public class Execute {
                 break;
             case "lights_out":
                 if(Game.getInstance().lightsOut_games.containsKey(name))Game.getInstance().lightsOut_games.get(name).remove_display();
+                break;
+            case "go":
+                if(Game.getInstance().go_games.containsKey(name))Game.getInstance().go_games.get(name).remove_display();
                 break;
         }
         return Command.SINGLE_SUCCESS;

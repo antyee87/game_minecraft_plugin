@@ -7,6 +7,9 @@ description: Ant development
 
 permissions:
   antgame.command:
-    antgame:
-      description: 允許玩家使用 /antgame 指令
+    add_game:
+      description: 允許玩家使用 /antgame add_game 指令
+      default: op
+    save_config:
+      description: 允許玩家使用 /antgame save_config 指令
       default: op

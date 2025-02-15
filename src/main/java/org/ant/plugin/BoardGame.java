@@ -2,6 +2,7 @@ package org.ant.plugin;
 
 import org.bukkit.*;
 import org.bukkit.entity.Firework;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.FireworkMeta;
 
 import java.util.Optional;
@@ -21,7 +22,7 @@ public class BoardGame {
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
     }
-    boolean move(int x, int z){return false;}
+    boolean move(int x, int z, Player minecraft_player){return false;}
     public void set_display(Location location, String display_align) {
         this.display_location = location;
         this.display_align = display_align;

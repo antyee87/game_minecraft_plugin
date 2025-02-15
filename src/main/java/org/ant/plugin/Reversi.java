@@ -3,7 +3,9 @@ package org.ant.plugin;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +25,7 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     int player;
     boolean end;
     boolean moveable;
+    Player[] minecraft_players;
 
     public Reversi(Location location, Optional<Location> display_location, Optional<String> display_align) {
         super(location, display_location, display_align, Reversi.size);
@@ -56,6 +59,7 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
         player = 1;
         end = false;
         find_can_move();
+        minecraft_players = new Player[2];
         display(board);
     }
 
@@ -93,66 +97,75 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     }
 
     @Override
-    public boolean move(int x, int y) {
+    public boolean move(int x, int y, Player minecraft_player) {
         if(!end){
             if(board[x][y] == 3){
-                if(selected == null || selected[0] != x || selected[1] != y){
-                    if(display_selected_task != null)display_selected_task.cancel();
-                    if(selected != null)display_single(selected[0], selected[1], 3);
-                    selected = new int[]{x,y};
-                    select(x, y, player, 3);
-                }
-                else {
-                    display_selected_task.cancel();
-                    board[x][y] = player;
-                    selected = null;
-                    for (int i = 0; i < 8; i++) {
-                        int check_x = x, check_y = y;
-                        check_x += vectors[i][0];
-                        check_y += vectors[i][1];
-                        while (can_flip[(i + 4) % 8][x][y] && is_inside(check_x, check_y)) {
-                            if (board[check_x][check_y] != player) board[check_x][check_y] = player;
-                            else break;
+                if(minecraft_players[player - 1] == null || minecraft_players[player - 1].equals(minecraft_player)) {
+                    if (minecraft_players[player - 1] == null) minecraft_players[player - 1] = minecraft_player;
+                    if (selected == null || selected[0] != x || selected[1] != y) {
+                        if (display_selected_task != null) display_selected_task.cancel();
+                        if (selected != null) display_single(selected[0], selected[1], 3);
+                        selected = new int[]{x, y};
+                        select(x, y, player, 3);
+                    } else {
+                        display_selected_task.cancel();
+                        board[x][y] = player;
+                        selected = null;
+                        for (int i = 0; i < 8; i++) {
+                            int check_x = x, check_y = y;
                             check_x += vectors[i][0];
                             check_y += vectors[i][1];
-                        }
-                    }
-                    for (int i = 0; i < 2; i++) {
-                        if (player == 1) player = 2;
-                        else player = 1;
-                        find_can_move();
-                        if (moveable) break;
-                    }
-                    display(board);
-
-                    if (!moveable) {
-                        int black_piece = 0;
-                        int white_piece = 0;
-                        for (int i = 0; i < size; i++) {
-                            for (int j = 0; j < size; j++) {
-                                if (board[i][j] == 1) black_piece++;
-                                else if (board[i][j] == 2) white_piece++;
+                            while (can_flip[(i + 4) % 8][x][y] && is_inside(check_x, check_y)) {
+                                if (board[check_x][check_y] != player) board[check_x][check_y] = player;
+                                else break;
+                                check_x += vectors[i][0];
+                                check_y += vectors[i][1];
                             }
                         }
-                        Component component;
-                        if (black_piece > white_piece) {
-                            component = Component.text("黑棋勝利").color(NamedTextColor.GRAY);
-                            firework(center, true);
-                        } else if (white_piece > black_piece) {
-                            component = Component.text("白棋勝利").color(NamedTextColor.WHITE);
-                            firework(center, false);
-                        } else {
-                            component = Component.text("平手");
+                        for (int i = 0; i < 2; i++) {
+                            if (player == 1) player = 2;
+                            else player = 1;
+                            find_can_move();
+                            if (moveable) break;
                         }
-                        broadcast(component);
-                        component = Component.text(black_piece).color(NamedTextColor.GRAY)
-                            .append(Component.text(" : ").color(NamedTextColor.GREEN))
-                            .append(Component.text(white_piece).color(NamedTextColor.WHITE));
-                        broadcast(component);
-                        end = true;
+                        display(board);
+
+                        if (!moveable) {
+                            int black_piece = 0;
+                            int white_piece = 0;
+                            for (int i = 0; i < size; i++) {
+                                for (int j = 0; j < size; j++) {
+                                    if (board[i][j] == 1) black_piece++;
+                                    else if (board[i][j] == 2) white_piece++;
+                                }
+                            }
+                            Component component;
+                            if (black_piece > white_piece) {
+                                component = Component.text("黑棋勝利").color(NamedTextColor.GRAY);
+                                firework(center, true);
+                            } else if (white_piece > black_piece) {
+                                component = Component.text("白棋勝利").color(NamedTextColor.WHITE);
+                                firework(center, false);
+                            } else {
+                                component = Component.text("平手");
+                            }
+                            broadcast(component);
+                            component = Component.text(black_piece).color(NamedTextColor.GRAY)
+                                .append(Component.text(" : ").color(NamedTextColor.GREEN))
+                                .append(Component.text(white_piece).color(NamedTextColor.WHITE));
+                            broadcast(component);
+                            end = true;
+                        }
                     }
+                    return true;
                 }
-                return true;
+                else{
+                    Component component;
+                    component = Component.text("已被玩家 " + minecraft_players[player - 1].getName() + " 綁定").color(NamedTextColor.RED);
+                    minecraft_player.sendMessage(component);
+                    minecraft_player.playSound(minecraft_player, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                    return false;
+                }
             }
         }
         return false;

@@ -7,9 +7,11 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.Skull;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.entity.Player;
 
 import java.util.*;
 
@@ -22,6 +24,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
     boolean[][] can_move = new boolean[size][size];
     boolean[][] attacked = new boolean[size][size];
     int player;
+    Player[] minecraft_players;
     Piece selected;
     Piece passable;
     Piece promotable;
@@ -78,12 +81,13 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
                 block.setType(Material.AIR);
             }
         }
-        display();
+        minecraft_players = new Player[2];
         player = 0;
         selected = null;
         passable = null;
         promotable = null;
         end = false;
+        display();
     }
 
     private void can_move_reset(){
@@ -249,98 +253,113 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
         if(attacked[king[player].x][king[player].y])broadcast("check");
     }
 
-    public boolean move(int x, int y, int layer) {
+    public boolean move(int x, int y, int layer, Player minecraft_player) {
         if(!end){
-            if(layer == 1 && board[x][y] != null){
-                if(board[x][y].owner == player){
-                    selected = board[x][y];
-                    can_move_reset();
-                    find_move(selected, can_move);
-                    display();
-                    return true;
-                }
-                return false;
-            }
-            else{
-                if (selected != null && can_move[x][y]) {
-                    int type = selected.type;
-                    int owner = selected.owner;
-                    if(type == 1){
-                        if(!selected.had_moved && Math.abs(x - selected.x) == 2)passable = selected;
-                        if(owner == 0){
-                            if(board[x-1][y] == passable && board[x-1][y] != null && board[x-1][y].owner != player)board[x-1][y] = null;
-                            if(x == 7)promotable = selected;
-                        }
-                        else{
-                            if(board[x+1][y] == passable && board[x+1][y] != null && board[x+1][y].owner != player)board[x+1][y] = null;
-                            if(x == 0)promotable = selected;
-                        }
-                    }
-                    else if(type == 6){
-                        if(!board[selected.x][selected.y].had_moved){
-                            if(board[x][y+1] != null && board[x][y+1].type == 2 && !board[x][y+1].had_moved){
-                                board[x][y-1] = board[x][y+1];
-                                board[x][y+1] = null;
-                            }
-                            if(board[x][y-2] != null && board[x][y-2].type == 2 && !board[x][y-2].had_moved){
-                                board[x][y+1] = board[x][y-2];
-                                board[x][y-2] = null;
-                            }
-                        }
-                    }
-                    if(passable != null && passable.owner != player)passable = null;
-
-                    if(is_exist(x,y) && board[x][y].type == 6) {
-                        Component component;
-                        if(board[x][y].owner == 0){
-                            component = Component.text("黑棋勝利").color(NamedTextColor.GRAY);
-                            firework(center, true);
-                        }
-                        else{
-                            component = Component.text("白棋勝利").color(NamedTextColor.GRAY);
-                            firework(center,false);
-                        }
-                        broadcast(component);
-                        end = true;
-                    }
-
-                    board[x][y] = board[selected.x][selected.y];
-                    board[selected.x][selected.y] = null;
-                    selected.setPos(x, y);
-                    selected.had_moved = true;
-                    selected = null;
-                    can_move_reset();
-                    display();
-                    if(promotable == null){
-                        switch_player();
+            if(minecraft_players[player - 1] == null || minecraft_players[player - 1].equals(minecraft_player)) {
+                if (minecraft_players[player - 1] == null) minecraft_players[player - 1] = minecraft_player;
+                if (layer == 1 && board[x][y] != null) {
+                    if (board[x][y].owner == player) {
+                        selected = board[x][y];
+                        can_move_reset();
+                        find_move(selected, can_move);
+                        display();
                         return true;
                     }
-                    else{
-                        for(int i=2; i<=5; i++){
-                            Block block = this.location.clone().add(x,i,y).getBlock();
-                            block.setType(Material.PLAYER_HEAD);
-                            Skull skull = (Skull)block.getState();
-                            skull.setPlayerProfile(Chess.profile(player * 10 + i));
-                            skull.update();
+                    return false;
+                } else {
+                    if (selected != null && can_move[x][y]) {
+                        int type = selected.type;
+                        int owner = selected.owner;
+                        if (type == 1) {
+                            if (!selected.had_moved && Math.abs(x - selected.x) == 2) passable = selected;
+                            if (owner == 0) {
+                                if (board[x - 1][y] == passable && board[x - 1][y] != null && board[x - 1][y].owner != player)
+                                    board[x - 1][y] = null;
+                                if (x == 7) promotable = selected;
+                            } else {
+                                if (board[x + 1][y] == passable && board[x + 1][y] != null && board[x + 1][y].owner != player)
+                                    board[x + 1][y] = null;
+                                if (x == 0) promotable = selected;
+                            }
+                        } else if (type == 6) {
+                            if (!board[selected.x][selected.y].had_moved) {
+                                if (board[x][y + 1] != null && board[x][y + 1].type == 2 && !board[x][y + 1].had_moved) {
+                                    board[x][y - 1] = board[x][y + 1];
+                                    board[x][y + 1] = null;
+                                }
+                                if (board[x][y - 2] != null && board[x][y - 2].type == 2 && !board[x][y - 2].had_moved) {
+                                    board[x][y + 1] = board[x][y - 2];
+                                    board[x][y - 2] = null;
+                                }
+                            }
+                        }
+                        if (passable != null && passable.owner != player) passable = null;
+
+                        if (is_exist(x, y) && board[x][y].type == 6) {
+                            Component component;
+                            if (board[x][y].owner == 0) {
+                                component = Component.text("黑棋勝利").color(NamedTextColor.GRAY);
+                                firework(center, true);
+                            } else {
+                                component = Component.text("白棋勝利").color(NamedTextColor.GRAY);
+                                firework(center, false);
+                            }
+                            broadcast(component);
+                            end = true;
+                        }
+
+                        board[x][y] = board[selected.x][selected.y];
+                        board[selected.x][selected.y] = null;
+                        selected.setPos(x, y);
+                        selected.had_moved = true;
+                        selected = null;
+                        can_move_reset();
+                        display();
+                        if (promotable == null) {
+                            switch_player();
+                            return true;
+                        } else {
+                            for (int i = 2; i <= 5; i++) {
+                                Block block = this.location.clone().add(x, i, y).getBlock();
+                                block.setType(Material.PLAYER_HEAD);
+                                Skull skull = (Skull) block.getState();
+                                skull.setPlayerProfile(Chess.profile(player * 10 + i));
+                                skull.update();
+                            }
                         }
                     }
+                    return false;
                 }
+            }
+            else{
+                Component component;
+                component = Component.text("已被玩家 " + minecraft_players[player - 1].getName() + " 綁定").color(NamedTextColor.RED);
+                minecraft_player.sendMessage(component);
+                minecraft_player.playSound(minecraft_player, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                 return false;
             }
         }
         return false;
     }
 
-    public void promote(int choice){
-        int x = promotable.x, y = promotable.y;
-        for(int i=2; i<=5; i++){
-            Block block = this.location.clone().add(x,i,y).getBlock();
-            block.setType(Material.AIR);
+    public void promote(int choice, Player minecraft_player) {
+        if(minecraft_players[player - 1].equals(minecraft_player)) {
+            int x = promotable.x, y = promotable.y;
+            for (int i = 2; i <= 5; i++) {
+                Block block = this.location.clone().add(x, i, y).getBlock();
+                block.setType(Material.AIR);
+            }
+            promotable.setPiece(player * 10 + choice);
+            promotable = null;
+            switch_player();
+            display();
         }
-        promotable.setPiece(player * 10 + choice);
-        promotable = null;
-        switch_player();
-        display();
+        else{
+            Component component;
+            component = Component.text("已被玩家 " + minecraft_players[player - 1].getName() + " 綁定").color(NamedTextColor.RED);
+            minecraft_player.sendMessage(component);
+            minecraft_player.playSound(minecraft_player, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+        }
     }
 
     public Map<String, Object> serialize() {

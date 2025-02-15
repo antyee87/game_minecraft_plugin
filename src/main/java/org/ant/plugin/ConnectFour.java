@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
@@ -21,6 +22,7 @@ public class ConnectFour implements ConfigurationSerializable {
     BukkitTask display_selected_task;
     int player;
     boolean end;
+    Player[] minecraft_players;
 
     public ConnectFour(Location location, String align) {
         this.location = location;
@@ -35,6 +37,7 @@ public class ConnectFour implements ConfigurationSerializable {
         selected = -1;
         if(display_selected_task != null)display_selected_task.cancel();
         player = 1;
+        minecraft_players = new Player[2];
         end = false;
         for(int x=0; x<7; x++){
             for(int y=0; y<7; y++){
@@ -49,61 +52,71 @@ public class ConnectFour implements ConfigurationSerializable {
     
 
     boolean visible = true;
-    public boolean move(int y){
+    public boolean move(int y, Player minecraft_player) {
         if(!end && top[y] < 6){
-            if(selected ==-1 || selected != y){
-                if(display_selected_task != null)display_selected_task.cancel();
-                if(selected != -1) {
-                    Block block = null;
-                    if (align.equals("x")) block = location.clone().add(selected, 0, 0).getBlock();
-                    else if (align.equals("z")) block = location.clone().add(0, 0, selected).getBlock();
-                    block.setType(Method.yellow_red_material(-1));
-                }
-                selected = y;
-                visible = true;
-                display_selected_task = Bukkit.getScheduler().runTaskTimer(Game.getInstance(), () ->{
-                    Block selected_block = null;
-                    if(align.equals("x"))selected_block = location.clone().add(y,0,0).getBlock();
-                    else if(align.equals("z"))selected_block = location.clone().add(0,0,y).getBlock();
-
-                    if(visible)selected_block.setType(Method.yellow_red_material(player));
-                    else selected_block.setType(Method.yellow_red_material(-1));
-                    visible = !visible;
-                }, 0, 10);
-            }
-            else {
-                display_selected_task.cancel();
-                Block block = null;
-                if(align.equals("x"))block = location.clone().add(y,0,0).getBlock();
-                else if(align.equals("z"))block = location.clone().add(0,0,y).getBlock();
-                block.setType(Method.yellow_red_material(-1));
-                selected = -1;
-
-                board[top[y]][y] = player;
-                if (align.equals("x")) location.clone().add(y, 6, 0).getBlock().setType(Method.yellow_red_material(player));
-                else if (align.equals("z")) location.clone().add(0, 6, y).getBlock().setType(Method.yellow_red_material(player));
-                if (is_win(top[y], y)) {
-                    Component component;
-                    if (player == 1){
-                        component = Component.text("黃色勝利").color(NamedTextColor.YELLOW);
-                        Method.yellow_red_firework(center.clone().add(0,3,0), true);
+            if(minecraft_players[player - 1] == null || minecraft_players[player - 1].equals(minecraft_player)) {
+                if (minecraft_players[player - 1] == null) minecraft_players[player - 1] = minecraft_player;
+                if (selected == -1 || selected != y) {
+                    if (display_selected_task != null) display_selected_task.cancel();
+                    if (selected != -1) {
+                        Block block = null;
+                        if (align.equals("x")) block = location.clone().add(selected, 0, 0).getBlock();
+                        else if (align.equals("z")) block = location.clone().add(0, 0, selected).getBlock();
+                        block.setType(Method.yellow_red_material(-1));
                     }
-                    else{
-                        component = Component.text("紅色勝利").color(NamedTextColor.RED);
-                        Method.yellow_red_firework(center.clone().add(0,3,0), false);
-                    }
-                    Method.broadcast(component, center, 7);
-                    end = true;
-                } else if (is_tie()) {
-                    Method.broadcast("平手", center, 7);
-                    end = true;
+                    selected = y;
+                    visible = true;
+                    display_selected_task = Bukkit.getScheduler().runTaskTimer(Game.getInstance(), () -> {
+                        Block selected_block = null;
+                        if (align.equals("x")) selected_block = location.clone().add(y, 0, 0).getBlock();
+                        else if (align.equals("z")) selected_block = location.clone().add(0, 0, y).getBlock();
+
+                        if (visible) selected_block.setType(Method.yellow_red_material(player));
+                        else selected_block.setType(Method.yellow_red_material(-1));
+                        visible = !visible;
+                    }, 0, 10);
                 } else {
-                    top[y]++;
-                    if (player == 1) player = 2;
-                    else player = 1;
+                    display_selected_task.cancel();
+                    Block block = null;
+                    if (align.equals("x")) block = location.clone().add(y, 0, 0).getBlock();
+                    else if (align.equals("z")) block = location.clone().add(0, 0, y).getBlock();
+                    block.setType(Method.yellow_red_material(-1));
+                    selected = -1;
+
+                    board[top[y]][y] = player;
+                    if (align.equals("x"))
+                        location.clone().add(y, 6, 0).getBlock().setType(Method.yellow_red_material(player));
+                    else if (align.equals("z"))
+                        location.clone().add(0, 6, y).getBlock().setType(Method.yellow_red_material(player));
+                    if (is_win(top[y], y)) {
+                        Component component;
+                        if (player == 1) {
+                            component = Component.text("黃色勝利").color(NamedTextColor.YELLOW);
+                            Method.yellow_red_firework(center.clone().add(0, 3, 0), true);
+                        } else {
+                            component = Component.text("紅色勝利").color(NamedTextColor.RED);
+                            Method.yellow_red_firework(center.clone().add(0, 3, 0), false);
+                        }
+                        Method.broadcast(component, center, 7);
+                        end = true;
+                    } else if (is_tie()) {
+                        Method.broadcast("平手", center, 7);
+                        end = true;
+                    } else {
+                        top[y]++;
+                        if (player == 1) player = 2;
+                        else player = 1;
+                    }
                 }
+                return true;
             }
-            return true;
+            else{
+                Component component;
+                component = Component.text("已被玩家 " + minecraft_players[player - 1].getName() + " 綁定").color(NamedTextColor.RED);
+                minecraft_player.sendMessage(component);
+                minecraft_player.playSound(minecraft_player, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                return false;
+            }
         }
         return false;
     }
