@@ -26,7 +26,6 @@ public class OperateListener implements Listener {
     private final Collection<LightsOut> lightsOut_games = Game.getInstance().lightsOut_games.values();
     private final Collection<ConnectFour> connectFours_games = Game.getInstance().connectFour_games.values();
     private final Collection<ScoreFour> scoreFour_games = Game.getInstance().scoreFour_games.values();
-    private final Collection<Go> go_games = Game.getInstance().go_games.values();
 
     private final HashMap<UUID, Long> cooldowns = new HashMap<>();
 
@@ -105,9 +104,6 @@ public class OperateListener implements Listener {
                             }
                         }
                     });
-                    if(found) return;
-
-                    simpleGameClick(go_games, block, player);
                     if(found) return;
                 }
             }

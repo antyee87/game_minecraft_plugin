@@ -24,7 +24,6 @@ public final class Game extends JavaPlugin {
     HashMap<String, LightsOut> lightsOut_games = new HashMap<String, LightsOut>();
     HashMap<String, ConnectFour> connectFour_games = new HashMap<String, ConnectFour>();
     HashMap<String, ScoreFour> scoreFour_games = new HashMap<String, ScoreFour>();
-    HashMap<String, Go> go_games = new HashMap<String, Go>();
     @Override
     public void onEnable() {
         getLogger().info("Ant遊戲插件已啟用");
@@ -38,7 +37,6 @@ public final class Game extends JavaPlugin {
         ConfigurationSerialization.registerClass(LightsOut.class);
         ConfigurationSerialization.registerClass(ConnectFour.class);
         ConfigurationSerialization.registerClass(ScoreFour.class);
-        ConfigurationSerialization.registerClass(Go.class);
         
         getServer().getPluginManager().registerEvents(new OperateListener(), this);
         saveDefaultConfig();
@@ -89,14 +87,6 @@ public final class Game extends JavaPlugin {
             for (String key : section.getKeys(false)) {
                 Map<String, Object> data = section.getConfigurationSection(key).getValues(false);
                 scoreFour_games.put(key, ScoreFour.deserialize(data));
-            }
-        }
-        //go games deserialize
-        section = getConfig().getConfigurationSection("go_games");
-        if (section != null) {
-            for (String key : section.getKeys(false)) {
-                Map<String, Object> data = section.getConfigurationSection(key).getValues(false);
-                go_games.put(key, Go.deserialize(data));
             }
         }
     }
@@ -287,44 +277,6 @@ public final class Game extends JavaPlugin {
                             )
                         )
                     )
-                    .then(Commands.literal("go")
-                        .then(Commands.literal("board")
-                            .then(Commands.literal("set")
-                                .then(Commands.argument("name", StringArgumentType.word())
-                                    .executes(ctx -> Execute.set_board(ctx,"go"))
-                                )
-                            )
-                            .then(Commands.literal("reset")
-                                .then(Commands.argument("name", StringArgumentType.word())
-                                    .suggests((context, builder) -> go_suggestions(builder))
-                                    .executes(ctx -> Execute.reset_board(ctx, "go"))
-                                )
-                            )
-                            .then(Commands.literal("remove")
-                                .then(Commands.argument("name", StringArgumentType.word())
-                                    .suggests((context, builder) -> go_suggestions(builder))
-                                    .executes(ctx -> Execute.remove_board(ctx, "go"))
-                                )
-                            )
-                        )
-                        .then(Commands.literal("display")
-                            .then(Commands.literal("set")
-                                .then(Commands.argument("name", StringArgumentType.word())
-                                    .suggests((context, builder) -> go_suggestions(builder))
-                                    .then(Commands.argument("align", StringArgumentType.word())
-                                        .suggests((context, builder)->align_suggestions(builder))
-                                        .executes(ctx -> Execute.set_display(ctx, "go"))
-                                    )
-                                )
-                            )
-                            .then(Commands.literal("remove")
-                                .then(Commands.argument("name", StringArgumentType.word())
-                                    .suggests((context, builder) -> go_suggestions(builder))
-                                    .executes(ctx -> Execute.remove_display(ctx, "go"))
-                                )
-                            )
-                        )
-                    )
                 )
                 .then(Commands.literal("save_config")
                     .requires(sender -> sender.getSender().hasPermission("antgame.command.save_config"))
@@ -360,10 +312,6 @@ public final class Game extends JavaPlugin {
     }
     private CompletableFuture<Suggestions> scoreFour_suggestions(SuggestionsBuilder builder) {
         scoreFour_games.keySet().forEach(builder::suggest);
-        return CompletableFuture.completedFuture(builder.build());
-    }
-    private CompletableFuture<Suggestions> go_suggestions(SuggestionsBuilder builder) {
-        go_games.keySet().forEach(builder::suggest);
         return CompletableFuture.completedFuture(builder.build());
     }
 
@@ -402,11 +350,6 @@ public final class Game extends JavaPlugin {
         getConfig().set("scoreFour_games", null);
         for (Map.Entry<String, ScoreFour> entry : scoreFour_games.entrySet()) {
             getConfig().set("scoreFour_games." + entry.getKey(), entry.getValue().serialize());
-        }
-        //go games serialize
-        getConfig().set("go_games", null);
-        for (Map.Entry<String, Go> entry : go_games.entrySet()) {
-            getConfig().set("go_games." + entry.getKey(), entry.getValue().serialize());
         }
         saveConfig();
         return Command.SINGLE_SUCCESS;
