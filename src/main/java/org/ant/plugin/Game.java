@@ -93,8 +93,8 @@ public final class Game extends JavaPlugin {
     private void regist_command(){
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
             commands.registrar().getDispatcher().register(Commands.literal("antgame")
-                    .then(Commands.literal("add_game")
-                    .requires(sender -> sender.getSender().hasPermission("antgame.command.add_game"))
+                    .then(Commands.literal("game_operate")
+                    .requires(sender -> sender.getSender().hasPermission("antgame.command.game_operate"))
                     .then(Commands.literal("chess")
                         .then(Commands.literal("board")
                             .then(Commands.literal("set")
