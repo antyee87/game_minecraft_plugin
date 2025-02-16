@@ -1,0 +1,6 @@
+root = true
+
+[*.{kt,kts}]
+ktlint_code_style = intellij_idea
+ktlint_standard_function-expression-body = disabled
+ij_kotlin_allow_trailing_comma_on_call_site = false

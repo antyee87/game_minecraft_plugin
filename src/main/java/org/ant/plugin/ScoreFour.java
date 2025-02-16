@@ -2,6 +2,9 @@ package org.ant.plugin;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.ant.game.BasicValue;
+import org.ant.game.Game;
+import org.ant.game.Method;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -12,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ScoreFour implements ConfigurationSerializable, BasicValue {
+    Game gameInstance;
     Location location;
     Location center;
 
@@ -23,7 +27,8 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
     boolean end;
     Player[] minecraft_players;
 
-    public ScoreFour(Location location) {
+    public ScoreFour(Game gameInstance, Location location) {
+        this.gameInstance = gameInstance;
         this.location = location;
         this.center = location.clone().add(3.5, 2.5, 3.5);
         reset();
@@ -67,7 +72,7 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
                         location.clone().add(selected[0] * 2, 0, selected[1] * 2).getBlock().setType(Material.IRON_BLOCK);
                     selected = new int[]{x, y};
                     visible = true;
-                    display_selected_task = Bukkit.getScheduler().runTaskTimer(Game.getInstance(), () -> {
+                    display_selected_task = Bukkit.getScheduler().runTaskTimer(gameInstance, () -> {
                         Block selected_block = location.clone().add(x * 2, 0, y * 2).getBlock();
                         if (visible) selected_block.setType(Method.yellow_red_material(player));
                         else selected_block.setType(Material.IRON_BLOCK);
@@ -175,8 +180,9 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
         return data;
     }
 
-    public static ScoreFour deserialize(Map<String, Object> args) {
+    public static ScoreFour deserialize(Game gameInstance, Map<String, Object> args) {
         return new ScoreFour(
+            gameInstance,
             (Location) args.get("location")
         );
     }
