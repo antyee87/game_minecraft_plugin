@@ -1,6 +1,5 @@
 package org.ant.game
 
-import org.ant.plugin.Chess
 import org.ant.plugin.ConnectFour
 import org.ant.plugin.ScoreFour
 import org.bukkit.GameMode
