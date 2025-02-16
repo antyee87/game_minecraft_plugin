@@ -53,6 +53,15 @@ public class ConnectFour implements ConfigurationSerializable {
         }
     }
 
+public void remove(){
+        reset();
+        for(int x=0; x<7; x++){
+            int status = 0;
+            if(x == 0)status = -1;
+            if(align.equals("x"))location.clone().add(x,0,0).getBlock().setType(Material.AIR);
+            else if(align.equals("z"))location.clone().add(0,0,x).getBlock().setType(Material.AIR);
+        }
+    }
 
 
     boolean visible = true;

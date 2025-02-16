@@ -41,6 +41,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
     }
 
     public void remove() {
+        reset();
         super.remove();
         if(promotable != null){
             int x = promotable.x, y = promotable.y;
@@ -256,7 +257,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
 
     public boolean move(int x, int y, int layer, Player minecraft_player) {
         if(!end){
-            if(minecraft_players[player] == null || minecraft_players[player] == minecraft_player) {
+            if(minecraft_players[player] == null || minecraft_players[player].equals(minecraft_player)) {
                 if (minecraft_players[player] == null) minecraft_players[player] = minecraft_player;
                 if (layer == 1 && board[x][y] != null) {
                     if (board[x][y].owner == player) {

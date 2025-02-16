@@ -48,6 +48,10 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
         this.display_location = null;
         this.display_align = null;
     }
+    public void remove(){
+        reset();
+        super.remove();
+    }
 
     public void reset(){
         board = new int[size][size];
