@@ -48,13 +48,11 @@ class Execute(private val instance: Game) {
                     gomoku.remove_display()
                     gomoku.set_display(location, align)
                 }
-
                 "reversi" -> if (instance.reversi_games.containsKey(name)) {
                     val reversi = instance.reversi_games[name]!!
                     reversi.remove_display()
                     reversi.set_display(location, align)
                 }
-
                 "lights_out" -> if (instance.lightsOut_games.containsKey(name)) {
                     val lightsOut = instance.lightsOut_games[name]!!
                     lightsOut.remove_display()
@@ -85,30 +83,25 @@ class Execute(private val instance: Game) {
                 instance.chess_games[name]!!.remove()
                 instance.chess_games.remove(name)
             }
-
             "gomoku" -> if (instance.gomoku_games.containsKey(name)) {
                 instance.gomoku_games[name]!!.remove()
                 instance.gomoku_games[name]!!.remove_display()
                 instance.gomoku_games.remove(name)
             }
-
             "reversi" -> if (instance.reversi_games.containsKey(name)) {
                 instance.reversi_games[name]!!.remove()
                 instance.reversi_games[name]!!.remove_display()
                 instance.reversi_games.remove(name)
             }
-
             "lights_out" -> if (instance.lightsOut_games.containsKey(name)) {
                 instance.lightsOut_games[name]!!.remove()
                 instance.lightsOut_games[name]!!.remove_display()
                 instance.lightsOut_games.remove(name)
             }
-
             "connect_four" -> if (instance.connectFour_games.containsKey(name)) {
-                instance.connectFour_games[name]!!.reset()
+                instance.connectFour_games[name]!!.remove()
                 instance.connectFour_games.remove(name)
             }
-
             "score_four" -> if (instance.scoreFour_games.containsKey(name)) {
                 instance.scoreFour_games[name]!!.remove()
                 instance.scoreFour_games.remove(name)
