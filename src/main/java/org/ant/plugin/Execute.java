@@ -130,7 +130,7 @@ public class Execute {
                 break;
             case "connect_four":
                 if(Game.getInstance().connectFour_games.containsKey(name)) {
-                    Game.getInstance().connectFour_games.get(name).reset();
+                    Game.getInstance().connectFour_games.get(name).remove();
                     Game.getInstance().connectFour_games.remove(name);
                 }
                 break;

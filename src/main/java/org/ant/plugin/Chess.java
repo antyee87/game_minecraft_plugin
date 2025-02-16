@@ -40,6 +40,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
     }
 
     public void remove() {
+        reset();
         super.remove();
         if(promotable != null){
             int x = promotable.x, y = promotable.y;
@@ -255,8 +256,8 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
 
     public boolean move(int x, int y, int layer, Player minecraft_player) {
         if(!end){
-            if(minecraft_players[player - 1] == null || minecraft_players[player - 1].equals(minecraft_player)) {
-                if (minecraft_players[player - 1] == null) minecraft_players[player - 1] = minecraft_player;
+            if(minecraft_players[player] == null || minecraft_players[player].equals(minecraft_player)) {
+                if (minecraft_players[player] == null) minecraft_players[player] = minecraft_player;
                 if (layer == 1 && board[x][y] != null) {
                     if (board[x][y].owner == player) {
                         selected = board[x][y];
@@ -333,7 +334,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
             }
             else{
                 Component component;
-                component = Component.text("已被玩家 " + minecraft_players[player - 1].getName() + " 綁定").color(NamedTextColor.RED);
+                component = Component.text("已被玩家 " + minecraft_players[player].getName() + " 綁定").color(NamedTextColor.RED);
                 minecraft_player.sendMessage(component);
                 minecraft_player.playSound(minecraft_player, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                 return false;

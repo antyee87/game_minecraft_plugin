@@ -63,6 +63,11 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
         display(board);
     }
 
+    public void remove(){
+        reset();
+        super.remove();
+    }
+
     private void find_can_move(){
         moveable = false;
         for(int x=0; x<size; x++){

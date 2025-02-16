@@ -46,6 +46,7 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
         }
     }
     public void remove(){
+        reset();
         for(int x=0; x<4; x++){
             for(int y=0; y<4; y++){
                 for(int z=0; z<5; z++){
