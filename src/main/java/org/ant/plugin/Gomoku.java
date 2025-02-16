@@ -49,7 +49,7 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
         this.display_align = null;
     }
     public void remove(){
-        reset();
+        if(display_selected_task != null)display_selected_task.cancel();
         super.remove();
     }
 

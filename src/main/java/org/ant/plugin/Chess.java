@@ -41,7 +41,6 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
     }
 
     public void remove() {
-        reset();
         super.remove();
         if(promotable != null){
             int x = promotable.x, y = promotable.y;
