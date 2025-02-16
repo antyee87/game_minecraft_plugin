@@ -48,6 +48,11 @@ kotlin {
 }
 
 tasks {
+    withType<JavaCompile>().configureEach {
+        options.encoding = "UTF-8"
+        options.release.set(javaVersion.toString().toInt())
+    }
+
     val ktlintCheck by registering(JavaExec::class) {
         group = LifecycleBasePlugin.VERIFICATION_GROUP
         description = "Check Kotlin code style."
@@ -56,10 +61,8 @@ tasks {
         args("src/**/*.kt", "**/*.kts", "!**/build/**")
     }
 
-    withType<JavaCompile>().configureEach {
+    compileKotlin {
         dependsOn(ktlintCheck)
-        options.encoding = "UTF-8"
-        options.release.set(javaVersion.toString().toInt())
     }
 
     processResources {
