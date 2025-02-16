@@ -64,7 +64,7 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     }
 
     public void remove(){
-        reset();
+        if(display_selected_task != null)display_selected_task.cancel();
         super.remove();
     }
 

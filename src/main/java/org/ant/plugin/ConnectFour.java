@@ -50,7 +50,7 @@ public class ConnectFour implements ConfigurationSerializable {
     }
 
     public void remove(){
-        reset();
+        if(display_selected_task != null)display_selected_task.cancel();
         for(int x=0; x<7; x++){
             int status = 0;
             if(x == 0)status = -1;

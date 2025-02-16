@@ -46,7 +46,7 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
         }
     }
     public void remove(){
-        reset();
+        if(display_selected_task != null)display_selected_task.cancel();
         for(int x=0; x<4; x++){
             for(int y=0; y<4; y++){
                 for(int z=0; z<5; z++){
