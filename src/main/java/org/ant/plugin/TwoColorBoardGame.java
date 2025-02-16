@@ -1,11 +1,14 @@
 package org.ant.plugin;
 
+import org.ant.game.BoardGame;
+import org.ant.game.Game;
 import org.bukkit.*;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Optional;
 
-public class TwoColorBoardGame extends  BoardGame {
+public class TwoColorBoardGame extends BoardGame {
+    Game gameInstance;
     Location location;
     Location center;
     Location display_location;
@@ -15,8 +18,9 @@ public class TwoColorBoardGame extends  BoardGame {
     int[] selected_point;
     BukkitTask display_selected_task;
 
-    public TwoColorBoardGame(Location location, Optional<Location> display_location, Optional<String> display_align, int size) {
+    public TwoColorBoardGame(Game gameInstance, Location location, Optional<Location> display_location, Optional<String> display_align, int size) {
         super(location, display_location, display_align, size);
+        this.gameInstance = gameInstance;
         this.location = location;
         display_location.ifPresent(value -> this.display_location = value);
         display_align.ifPresent(s -> this.display_align = s);
@@ -54,7 +58,7 @@ public class TwoColorBoardGame extends  BoardGame {
     public void select(int x, int y, int player, int init){
         selected_point = new int[]{x, y};
         visible = true;
-        display_selected_task = Bukkit.getScheduler().runTaskTimer(Game.getInstance(), () ->{
+        display_selected_task = Bukkit.getScheduler().runTaskTimer(gameInstance, () -> {
             if(visible)display_single(x, y, player);
             else display_single(x, y, init);
             visible = !visible;

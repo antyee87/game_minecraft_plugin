@@ -2,18 +2,18 @@ package org.ant.plugin;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
+import org.ant.game.Game;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializable {
+    Game gameInstance;
     static int[][] vectors = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
     Location location;
     Location center;
@@ -27,8 +27,9 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
     boolean end;
     Player[] minecraft_players;
 
-    public Gomoku(Location location, Optional<Location> display_location, Optional<String> display_align) {
-        super(location, display_location, display_align, Gomoku.size);
+    public Gomoku(Game gameInstance, Location location, Optional<Location> display_location, Optional<String> display_align) {
+        super(gameInstance, location, display_location, display_align, Gomoku.size);
+        this.gameInstance = gameInstance;
         this.location = location;
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
@@ -144,8 +145,9 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
         return data;
     }
 
-    public static Gomoku deserialize(Map<String, Object> args) {
+    public static Gomoku deserialize(Game gameInstance, Map<String, Object> args) {
         return new Gomoku(
+            gameInstance,
             (Location) args.get("location"),
             Optional.ofNullable((Location) args.get("display_location")),
             Optional.ofNullable((String)args.get("display_align"))

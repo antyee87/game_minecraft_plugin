@@ -4,6 +4,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.ant.game.BoardGame;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -16,7 +17,7 @@ import org.bukkit.entity.Player;
 import java.util.*;
 
 public class Chess extends BoardGame implements ConfigurationSerializable {
-    Location location;
+    public Location location;
     Location center;
     static final int size = 8;
 
@@ -27,7 +28,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
     Player[] minecraft_players;
     Piece selected;
     Piece passable;
-    Piece promotable;
+    public Piece promotable;
     Piece[] king = new Piece[2];
     boolean end;
 
@@ -255,8 +256,8 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
 
     public boolean move(int x, int y, int layer, Player minecraft_player) {
         if(!end){
-            if(minecraft_players[player - 1] == null || minecraft_players[player - 1].equals(minecraft_player)) {
-                if (minecraft_players[player - 1] == null) minecraft_players[player - 1] = minecraft_player;
+            if(minecraft_players[player] == null || minecraft_players[player] == minecraft_player) {
+                if (minecraft_players[player] == null) minecraft_players[player] = minecraft_player;
                 if (layer == 1 && board[x][y] != null) {
                     if (board[x][y].owner == player) {
                         selected = board[x][y];
@@ -333,7 +334,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
             }
             else{
                 Component component;
-                component = Component.text("已被玩家 " + minecraft_players[player - 1].getName() + " 綁定").color(NamedTextColor.RED);
+                component = Component.text("已被玩家 " + minecraft_players[player].getName() + " 綁定").color(NamedTextColor.RED);
                 minecraft_player.sendMessage(component);
                 minecraft_player.playSound(minecraft_player, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                 return false;
@@ -343,7 +344,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
     }
 
     public void promote(int choice, Player minecraft_player) {
-        if(minecraft_players[player - 1].equals(minecraft_player)) {
+        if(minecraft_players[player].equals(minecraft_player)) {
             int x = promotable.x, y = promotable.y;
             for (int i = 2; i <= 5; i++) {
                 Block block = this.location.clone().add(x, i, y).getBlock();
@@ -356,7 +357,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
         }
         else{
             Component component;
-            component = Component.text("已被玩家 " + minecraft_players[player - 1].getName() + " 綁定").color(NamedTextColor.RED);
+            component = Component.text("已被玩家 " + minecraft_players[player].getName() + " 綁定").color(NamedTextColor.RED);
             minecraft_player.sendMessage(component);
             minecraft_player.playSound(minecraft_player, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
         }

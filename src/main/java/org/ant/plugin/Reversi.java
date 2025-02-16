@@ -2,6 +2,8 @@ package org.ant.plugin;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.ant.game.Game;
+import org.ant.game.Method;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -12,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public class Reversi extends TwoColorBoardGame implements ConfigurationSerializable {
+    Game gameInstance;
     static int[][] vectors = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
     Location location;
     Location center;
@@ -27,8 +30,9 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     boolean moveable;
     Player[] minecraft_players;
 
-    public Reversi(Location location, Optional<Location> display_location, Optional<String> display_align) {
-        super(location, display_location, display_align, Reversi.size);
+    public Reversi(Game gameInstance, Location location, Optional<Location> display_location, Optional<String> display_align) {
+        super(gameInstance, location, display_location, display_align, Reversi.size);
+        this.gameInstance = gameInstance;
         this.location = location;
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
@@ -179,8 +183,9 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
         return data;
     }
 
-    public static Reversi deserialize(Map<String, Object> args) {
+    public static Reversi deserialize(Game gameInstance, Map<String, Object> args) {
         return new Reversi(
+            gameInstance,
             (Location) args.get("location"),
             Optional.ofNullable((Location) args.get("display_location")),
             Optional.ofNullable((String)args.get("display_align"))

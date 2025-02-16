@@ -2,6 +2,8 @@ package org.ant.plugin;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.ant.game.Game;
+import org.ant.game.Method;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -12,9 +14,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ConnectFour implements ConfigurationSerializable {
-    Location location;
+    Game gameInstance;
+    public Location location;
     Location center;
-    String align;
+    public String align;
 
     int[][] board;
     int[] top;
@@ -24,7 +27,8 @@ public class ConnectFour implements ConfigurationSerializable {
     boolean end;
     Player[] minecraft_players;
 
-    public ConnectFour(Location location, String align) {
+    public ConnectFour(Game gameInstance, Location location, String align) {
+        this.gameInstance = gameInstance;
         this.location = location;
         this.align = align;
         if(align.equals("x"))this.center = location.clone().add(3.5, 3, 0);
@@ -49,7 +53,7 @@ public class ConnectFour implements ConfigurationSerializable {
         }
     }
 
-    
+
 
     boolean visible = true;
     public boolean move(int y, Player minecraft_player) {
@@ -66,7 +70,7 @@ public class ConnectFour implements ConfigurationSerializable {
                     }
                     selected = y;
                     visible = true;
-                    display_selected_task = Bukkit.getScheduler().runTaskTimer(Game.getInstance(), () -> {
+                    display_selected_task = Bukkit.getScheduler().runTaskTimer(gameInstance, () -> {
                         Block selected_block = null;
                         if (align.equals("x")) selected_block = location.clone().add(y, 0, 0).getBlock();
                         else if (align.equals("z")) selected_block = location.clone().add(0, 0, y).getBlock();
@@ -160,8 +164,9 @@ public class ConnectFour implements ConfigurationSerializable {
         return data;
     }
 
-    public static ConnectFour deserialize(Map<String, Object> args) {
+    public static ConnectFour deserialize(Game gameInstance, Map<String, Object> args) {
         return new ConnectFour(
+            gameInstance,
             (Location) args.get("location"),
             (String) args.get("align")
         );
