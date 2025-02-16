@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
@@ -20,6 +21,8 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
     BukkitTask display_selected_task;
     int player;
     boolean end;
+    Player[] minecraft_players;
+
     public ScoreFour(Location location) {
         this.location = location;
         this.center = location.clone().add(3.5, 2.5, 3.5);
@@ -31,6 +34,7 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
         selected = null;
         if(display_selected_task != null)display_selected_task.cancel();
         player = 1;
+        minecraft_players = new Player[2];
         end = false;
         for(int x=0; x<4; x++){
             for(int y=0; y<4; y++){
@@ -52,48 +56,58 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
     }
 
     boolean visible = true;
-    public boolean move(int x, int y){
+    public boolean move(int x, int y, Player minecraft_player){
         if(!end && top[x][y] < 4){
-            if(selected == null || selected[0] != x || selected[1] != y){
-                if(display_selected_task != null)display_selected_task.cancel();
-                if(selected != null)location.clone().add(selected[0]*2, 0, selected[1]*2).getBlock().setType(Material.IRON_BLOCK);
-                selected = new int[]{x,y};
-                visible = true;
-                display_selected_task = Bukkit.getScheduler().runTaskTimer(Game.getInstance(), () ->{
-                    Block selected_block = location.clone().add(x*2,0,y*2).getBlock();
-                    if(visible)selected_block.setType(Method.yellow_red_material(player));
-                    else selected_block.setType(Material.IRON_BLOCK);
-                    visible = !visible;
-                }, 0, 10);
-            }
-            else {
-                display_selected_task.cancel();
-                location.clone().add(x*2,0,y*2).getBlock().setType(Material.IRON_BLOCK);
-                board[x][y][top[x][y]] = player;
-                selected = null;
-
-                location.clone().add(2 * x, 4, 2 * y).getBlock().setType(Method.yellow_red_material(player));
-                if (is_win(x, y, top[x][y])) {
-                    Component component;
-                    if (player == 1) {
-                        component = Component.text("黃色勝利").color(NamedTextColor.YELLOW);
-                        Method.yellow_red_firework(center, true);
-                    } else {
-                        component = Component.text("紅色勝利").color(NamedTextColor.RED);
-                        Method.yellow_red_firework(center, false);
-                    }
-                    Method.broadcast(component, center, 7);
-                    end = true;
-                } else if (is_tie()) {
-                    Method.broadcast("平手", center, 7);
-                    end = true;
+            if(minecraft_players[player - 1] == null || minecraft_players[player - 1].equals(minecraft_player)) {
+                if (minecraft_players[player - 1] == null) minecraft_players[player - 1] = minecraft_player;
+                if (selected == null || selected[0] != x || selected[1] != y) {
+                    if (display_selected_task != null) display_selected_task.cancel();
+                    if (selected != null)
+                        location.clone().add(selected[0] * 2, 0, selected[1] * 2).getBlock().setType(Material.IRON_BLOCK);
+                    selected = new int[]{x, y};
+                    visible = true;
+                    display_selected_task = Bukkit.getScheduler().runTaskTimer(Game.getInstance(), () -> {
+                        Block selected_block = location.clone().add(x * 2, 0, y * 2).getBlock();
+                        if (visible) selected_block.setType(Method.yellow_red_material(player));
+                        else selected_block.setType(Material.IRON_BLOCK);
+                        visible = !visible;
+                    }, 0, 10);
                 } else {
-                    top[x][y]++;
-                    if (player == 1) player = 2;
-                    else player = 1;
+                    display_selected_task.cancel();
+                    location.clone().add(x * 2, 0, y * 2).getBlock().setType(Material.IRON_BLOCK);
+                    board[x][y][top[x][y]] = player;
+                    selected = null;
+
+                    location.clone().add(2 * x, 4, 2 * y).getBlock().setType(Method.yellow_red_material(player));
+                    if (is_win(x, y, top[x][y])) {
+                        Component component;
+                        if (player == 1) {
+                            component = Component.text("黃色勝利").color(NamedTextColor.YELLOW);
+                            Method.yellow_red_firework(center, true);
+                        } else {
+                            component = Component.text("紅色勝利").color(NamedTextColor.RED);
+                            Method.yellow_red_firework(center, false);
+                        }
+                        Method.broadcast(component, center, 7);
+                        end = true;
+                    } else if (is_tie()) {
+                        Method.broadcast("平手", center, 7);
+                        end = true;
+                    } else {
+                        top[x][y]++;
+                        if (player == 1) player = 2;
+                        else player = 1;
+                    }
                 }
+                return true;
             }
-            return true;
+            else{
+                Component component;
+                component = Component.text("已被玩家 " + minecraft_players[player - 1].getName() + " 綁定").color(NamedTextColor.RED);
+                minecraft_player.sendMessage(component);
+                minecraft_player.playSound(minecraft_player, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                return false;
+            }
         }
         return false;
     }

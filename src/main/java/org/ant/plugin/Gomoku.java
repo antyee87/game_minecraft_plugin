@@ -4,7 +4,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
@@ -23,6 +25,7 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
     int[] selected;
     int player;
     boolean end;
+    Player[] minecraft_players;
 
     public Gomoku(Location location, Optional<Location> display_location, Optional<String> display_align) {
         super(location, display_location, display_align, Gomoku.size);
@@ -51,44 +54,55 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
         if(display_selected_task != null)display_selected_task.cancel();
         player = 1;
         end = false;
+        minecraft_players = new Player[2];
         display(board);
     }
 
     @Override
-    public boolean move(int x, int y) {
+    public boolean move(int x, int y, Player minecraft_player) {
         if(!end && board[x][y] == 0){
-            if(selected == null || selected[0] != x || selected[1] != y){
-                if(display_selected_task != null)display_selected_task.cancel();
-                if(selected != null)display_single(selected[0], selected[1], 0);
-                selected = new int[]{x,y};
-                select(x, y, player, 0);
+            if(minecraft_players[player - 1] == null || minecraft_players[player - 1].equals(minecraft_player)){
+                if(minecraft_players[player - 1] == null)minecraft_players[player - 1] = minecraft_player;
+
+                if (selected == null || selected[0] != x || selected[1] != y) {
+                    if (display_selected_task != null) display_selected_task.cancel();
+                    if (selected != null) display_single(selected[0], selected[1], 0);
+                    selected = new int[]{x, y};
+                    select(x, y, player, 0);
+                }
+                else {
+                    display_selected_task.cancel();
+                    board[x][y] = player;
+                    selected = null;
+                    if (is_win(x, y)) {
+                        Component component;
+                        if (player == 1) {
+                            component = Component.text("黑棋勝利").color(NamedTextColor.GRAY);
+                            firework(center, true);
+                        } else {
+                            component = Component.text("白棋勝利").color(NamedTextColor.WHITE);
+                            firework(center, false);
+                        }
+                        broadcast(component);
+                        end = true;
+                    }
+                    if (is_tie()) {
+                        broadcast("平手");
+                        end = true;
+                    }
+                    display(board);
+                    if (player == 1) player = 2;
+                    else player = 1;
+                }
+                return true;
             }
             else{
-                display_selected_task.cancel();
-                board[x][y] = player;
-                selected = null;
-                if(is_win(x,y)){
-                    Component component;
-                    if (player == 1) {
-                        component = Component.text("黑棋勝利").color(NamedTextColor.GRAY);
-                        firework(center,true);
-                    }
-                    else{
-                        component = Component.text("白棋勝利").color(NamedTextColor.WHITE);
-                        firework(center,false);
-                    }
-                    broadcast(component);
-                    end = true;
-                }
-                if(is_tie()){
-                    broadcast("平手");
-                    end = true;
-                }
-                display(board);
-                if(player == 1)player = 2;
-                else player = 1;
+                Component component;
+                component = Component.text("已被玩家 " + minecraft_players[player - 1].getName() + " 綁定").color(NamedTextColor.RED);
+                minecraft_player.sendMessage(component);
+                minecraft_player.playSound(minecraft_player, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                return false;
             }
-            return true;
         }
         return false;
     }
