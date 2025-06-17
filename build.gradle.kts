@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     java
-    kotlin("jvm") version "2.1.10"
+    kotlin("jvm") version "2.1.21"
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
@@ -25,9 +25,9 @@ repositories {
 
 val ktlint: Configuration by configurations.creating
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.5-R0.1-SNAPSHOT")
 
-    ktlint("com.pinterest.ktlint:ktlint-cli:1.5.0") {
+    ktlint("com.pinterest.ktlint:ktlint-cli:1.6.0") {
         attributes {
             attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
         }
@@ -78,6 +78,6 @@ tasks {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion("1.21.4")
+        minecraftVersion("1.21.5")
     }
 }
