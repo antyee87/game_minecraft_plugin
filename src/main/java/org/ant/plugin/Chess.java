@@ -33,7 +33,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
     boolean end;
 
     public Chess(Location location) {
-        super(location, Optional.empty(), Optional.empty(), 8);
+        super(location, null, null, 8);
         this.location = location;
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
@@ -155,8 +155,8 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
                 if (is_exist(x, y - 1) && board[x][y - 1].owner != owner && board[x][y - 1] == passable) result[forward][y - 1] = true;
             }
             else{
-                if(is_inside(forward, y+1))result[forward][y + 1] = true;
-                if(is_inside(forward, y-1))result[forward][y - 1] = true;
+                if(isInside(forward, y+1))result[forward][y + 1] = true;
+                if(isInside(forward, y-1))result[forward][y - 1] = true;
             }
         }
         else if(type == 2){
@@ -169,7 +169,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
                 int check_x = x, check_y = y;
                 check_x += vectors[0];
                 check_y += vectors[1];
-                if(is_inside(check_x, check_y)) {
+                if(isInside(check_x, check_y)) {
                     if (board[check_x][check_y] == null) result[check_x][check_y] = true;
                     else if (board[check_x][check_y].owner != owner) result[check_x][check_y] = true;
                 }
@@ -192,7 +192,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
             for(int dx=-1; dx<=1; dx++){
                 for(int dy=-1; dy<=1; dy++){
                     if(dx == 0 && dy == 0) continue;
-                    if(is_inside(x+dx,y+dy) && (board[x+dx][y+dy] == null || board[x+dx][y+dy].owner != owner))result[x+dx][y+dy] = true;
+                    if(isInside(x+dx,y+dy) && (board[x+dx][y+dy] == null || board[x+dx][y+dy].owner != owner))result[x+dx][y+dy] = true;
                 }
             }
             if(!board[x][y].had_moved && !attacked[x][y]){
@@ -226,7 +226,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
     }
 
     private boolean is_exist(int x, int y) {
-        return (is_inside(x,y) && board[x][y] != null);
+        return (isInside(x,y) && board[x][y] != null);
     }
 
     private void iter_find(int x, int y, int[] vectors, boolean[][] result){
@@ -234,7 +234,7 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
         int check_x = x, check_y = y;
         check_x += vectors[0];
         check_y += vectors[1];
-        while (is_inside(check_x, check_y)) {
+        while (isInside(check_x, check_y)) {
             if (board[check_x][check_y] == null) {
                 result[check_x][check_y] = true;
                 check_x += vectors[0];
@@ -376,45 +376,21 @@ public class Chess extends BoardGame implements ConfigurationSerializable {
     }
 
     public static PlayerProfile profile(int piece) {
-        String textureValue="";
-        switch (piece) {
-            case 1:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjg0OWRlNzBjYTg4NWIzZTFjNTE4NTE2MGI3NDA2MzlhZDFjNzgyMGJjMmI3N2QwYTVhYmMyZTU0NWY1ZTkwNSJ9fX0=";
-                break;
-            case 2:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMWY4MjVmYWQ4MzA4OTg5ZjlkMmE1MTA4ZTEyMjM4ZmIxMDI3MGM0ZDFmZDE3YzFiNjQzNmZlOGQyYjI0MmQxMCJ9fX0=";
-                break;
-            case 3:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTA0YWRiZmEzZjg1Nzg5ZGQ0Yzc3NDk5YmNhNWMyY2VjMTU3MWEwODJiM2NjMDgwMDU4NmY5YTRkMzNiNTA3OSJ9fX0=";
-                break;
-            case 4:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjIyNGU4MDliOWE1ODc2OTExNzZhMWIzNGQyZDUxM2ZmODE0MGY2MDZkMjViZTU3ZjA3NWU5NmM3M2EyNWIzYiJ9fX0=";
-                break;
-            case 5:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjE0M2Y2ODRlNjc5MjU5MGNjNGFkYThlODY3MDBhNTMxODc1ZjQ4Y2Y4OTE3M2M3ZWEwMjU0MjMxNDRmMGExNSJ9fX0=";
-                break;
-            case 6:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzBlNzE0MDk2YTBkZDQwNDI4OTBhOTUxMGQ4NTdhNzZhNTBjMzRlODJhNDM4YzZiZjEyOTMxNWEyOWVjODViMyJ9fX0=";
-                break;
-            case 11:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNTg4NTUzMjk5ZmQ0ZTgzMTMyYTI2YTBlMGQyNzZiNjA0ZmVkYTVmYmEzNDg1MDFkMDc2MDI4Y2U5ODgzNDEzZSJ9fX0=";
-                break;
-            case 12:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTVjMjRlYTM4MjE0NzUyOWNlN2I1ZmRhZGJhZDVhMDFkMDAwMzg0NTY1NGNhOTA0NjQwM2U1NjkxNzhlZWZiMCJ9fX0=";
-                break;
-            case 13:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDExZjMzNmRlNTJiMjgzMzc4Zjk5MmM2NDk3NGRkNTYzZTQ1YjEzMDdjNTNmYzUzZjQxMTEyZWUyZGYyMTAzMCJ9fX0=";
-                break;
-            case 14:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjBjOWEzNDBlMDQyM2E0MTgyOTQ1NzNkMmRkYmU1OTY4MmRkMjg5ZDhjZTQ4ZWE0Y2Y1ZTVmOWY0YzY1ZjU1YiJ9fX0=";
-                break;
-            case 15:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTExNzk3YjlhODIxNWRkMzRiMmZlNmQwNWJlYzFkNjM4ZDZlODdkOWVhMjZkMDMxODYwOGI5NzZkZjJmZDI1OSJ9fX0=";
-                break;
-            case 16:
-                textureValue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmQxOWVlOThhOWJkNzRjZWQ4OGY5M2FkMWI1ZTQ1NzdhOTI5NGEwZDgwZGZlMDcyOTIxYTNkMGVjZDBkZGMwNSJ9fX0=";
-                break;
-        }
+        String textureValue = switch (piece) {
+            case 1 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjg0OWRlNzBjYTg4NWIzZTFjNTE4NTE2MGI3NDA2MzlhZDFjNzgyMGJjMmI3N2QwYTVhYmMyZTU0NWY1ZTkwNSJ9fX0=";
+            case 2 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMWY4MjVmYWQ4MzA4OTg5ZjlkMmE1MTA4ZTEyMjM4ZmIxMDI3MGM0ZDFmZDE3YzFiNjQzNmZlOGQyYjI0MmQxMCJ9fX0=";
+            case 3 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTA0YWRiZmEzZjg1Nzg5ZGQ0Yzc3NDk5YmNhNWMyY2VjMTU3MWEwODJiM2NjMDgwMDU4NmY5YTRkMzNiNTA3OSJ9fX0=";
+            case 4 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjIyNGU4MDliOWE1ODc2OTExNzZhMWIzNGQyZDUxM2ZmODE0MGY2MDZkMjViZTU3ZjA3NWU5NmM3M2EyNWIzYiJ9fX0=";
+            case 5 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjE0M2Y2ODRlNjc5MjU5MGNjNGFkYThlODY3MDBhNTMxODc1ZjQ4Y2Y4OTE3M2M3ZWEwMjU0MjMxNDRmMGExNSJ9fX0=";
+            case 6 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzBlNzE0MDk2YTBkZDQwNDI4OTBhOTUxMGQ4NTdhNzZhNTBjMzRlODJhNDM4YzZiZjEyOTMxNWEyOWVjODViMyJ9fX0=";
+            case 11 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNTg4NTUzMjk5ZmQ0ZTgzMTMyYTI2YTBlMGQyNzZiNjA0ZmVkYTVmYmEzNDg1MDFkMDc2MDI4Y2U5ODgzNDEzZSJ9fX0=";
+            case 12 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTVjMjRlYTM4MjE0NzUyOWNlN2I1ZmRhZGJhZDVhMDFkMDAwMzg0NTY1NGNhOTA0NjQwM2U1NjkxNzhlZWZiMCJ9fX0=";
+            case 13 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDExZjMzNmRlNTJiMjgzMzc4Zjk5MmM2NDk3NGRkNTYzZTQ1YjEzMDdjNTNmYzUzZjQxMTEyZWUyZGYyMTAzMCJ9fX0=";
+            case 14 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjBjOWEzNDBlMDQyM2E0MTgyOTQ1NzNkMmRkYmU1OTY4MmRkMjg5ZDhjZTQ4ZWE0Y2Y1ZTVmOWY0YzY1ZjU1YiJ9fX0=";
+            case 15 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTExNzk3YjlhODIxNWRkMzRiMmZlNmQwNWJlYzFkNjM4ZDZlODdkOWVhMjZkMDMxODYwOGI5NzZkZjJmZDI1OSJ9fX0=";
+            case 16 -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmQxOWVlOThhOWJkNzRjZWQ4OGY5M2FkMWI1ZTQ1NzdhOTI5NGEwZDgwZGZlMDcyOTIxYTNkMGVjZDBkZGMwNSJ9fX0=";
+            default -> "";
+        };
         PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
         profile.setProperty(new ProfileProperty("textures", textureValue));
         return profile;

@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 
 public class Reversi extends TwoColorBoardGame implements ConfigurationSerializable {
     Game gameInstance;
@@ -30,30 +30,30 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     boolean moveable;
     Player[] minecraft_players;
 
-    public Reversi(Game gameInstance, Location location, Optional<Location> display_location, Optional<String> display_align) {
+    public Reversi(Game gameInstance, Location location, int[][] board, Location display_location, String display_align) {
         super(gameInstance, location, display_location, display_align, Reversi.size);
         this.gameInstance = gameInstance;
         this.location = location;
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
-        display_location.ifPresent(value -> this.display_location = value);
-        display_align.ifPresent(s -> this.display_align = s);
-        reset();
+        this.display_location = display_location;
+        this.display_align = display_align;
+        reset(board);
     }
 
-    public void set_display(Location location, String display_align) {
-        super.set_display(location, display_align);
+    public void setDisplay(Location location, String display_align) {
+        super.setDisplay(location, display_align);
         this.display_location = location;
         this.display_align = display_align;
     }
-    public void remove_display() {
-        super.remove_display();
+    public void removeDisplay() {
+        super.removeDisplay();
         this.display_location = null;
         this.display_align = null;
     }
 
-    public void reset(){
-        board = new int[size][size];
+    public void reset(int[][] boardPreset) {
+        board = Objects.requireNonNullElseGet(boardPreset, () -> new int[size][size]);
         board[3][3] = 1;
         board[4][4] = 1;
         board[3][4] = 2;
@@ -88,13 +88,13 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
                         boolean has_opponent = false;
                         check_x += vectors[i][0];
                         check_y += vectors[i][1];
-                        while(is_inside(check_x, check_y)){
+                        while(isInside(check_x, check_y)){
                             if(board[check_x][check_y] != player && Method.isInRange(board[check_x][check_y],1,2)) has_opponent = true;
                             else break;
                             check_x += vectors[i][0];
                             check_y += vectors[i][1];
                         }
-                        if(has_opponent && is_inside(check_x, check_y) && !Method.isInRange(board[check_x][check_y],1,2)){
+                        if(has_opponent && isInside(check_x, check_y) && !Method.isInRange(board[check_x][check_y],1,2)){
                             board[check_x][check_y] = 3;
                             can_flip[i][check_x][check_y] = true;
                             moveable = true;
@@ -124,7 +124,7 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
                             int check_x = x, check_y = y;
                             check_x += vectors[i][0];
                             check_y += vectors[i][1];
-                            while (can_flip[(i + 4) % 8][x][y] && is_inside(check_x, check_y)) {
+                            while (can_flip[(i + 4) % 8][x][y] && isInside(check_x, check_y)) {
                                 if (board[check_x][check_y] != player) board[check_x][check_y] = player;
                                 else break;
                                 check_x += vectors[i][0];
@@ -183,6 +183,9 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     public Map<String, Object> serialize() {
         Map<String, Object> data = new HashMap<>();
         data.put("location", this.location);
+        if (!end) {
+            data.put("board", this.board);
+        }
         data.put("display_location", this.display_location);
         data.put("display_align", this.display_align);
         return data;
@@ -192,8 +195,9 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
         return new Reversi(
             gameInstance,
             (Location) args.get("location"),
-            Optional.ofNullable((Location) args.get("display_location")),
-            Optional.ofNullable((String)args.get("display_align"))
+            (int[][]) args.get("board"),
+            (Location) args.get("display_location"),
+            (String) args.get("display_align")
         );
     }
 }

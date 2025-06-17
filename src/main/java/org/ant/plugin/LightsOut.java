@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 
 public class LightsOut extends BoardGame implements ConfigurationSerializable{
     static int[][] vectors = new int[][]{{0,0},{1,0},{0,1},{-1,0},{0,-1}};
@@ -24,30 +24,30 @@ public class LightsOut extends BoardGame implements ConfigurationSerializable{
 
     boolean[][] board;
 
-    public LightsOut(Location location, int size, Optional<Location> display_location, Optional<String> display_align) {
+    public LightsOut(Location location, int size, boolean[][] board, Location display_location, String display_align) {
         super(location, display_location, display_align, size);
         this.location = location;
         this.size = size;
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
-        display_location.ifPresent(value -> this.display_location = value);
-        display_align.ifPresent(s -> this.display_align = s);
-        reset();
+        this.display_location = display_location;
+        this.display_align = display_align;
+        reset(board);
     }
 
-    public void set_display(Location location, String display_align) {
-        super.set_display(location, display_align);
+    public void setDisplay(Location location, String display_align) {
+        super.setDisplay(location, display_align);
         this.display_location = location;
         this.display_align = display_align;
     }
-    public void remove_display() {
-        super.remove_display();
+    public void removeDisplay() {
+        super.removeDisplay();
         this.display_location = null;
         this.display_align = null;
     }
 
-    public void reset(){
-        board = new boolean[size][size];
+    public void reset(boolean[][] boardPreset){
+        board = Objects.requireNonNullElseGet(boardPreset, () -> new boolean[size][size]);
         for (int x = 0; x < size; x++) {
             for (int y = 0; y < size; y++) {
                 int random = (int) (Math.round(Math.random()));
@@ -88,7 +88,7 @@ public class LightsOut extends BoardGame implements ConfigurationSerializable{
     @Override
     public boolean move(int x, int y, Player minecraft_player) {
         for(int[] vector : vectors){
-            if(is_inside(x + vector[0], y + vector[1])){
+            if(isInside(x + vector[0], y + vector[1])){
                 board[x+vector[0]][y+vector[1]] = !board[x+vector[0]][y+vector[1]];
             }
         }
@@ -100,6 +100,7 @@ public class LightsOut extends BoardGame implements ConfigurationSerializable{
         Map<String, Object> data = new HashMap<>();
         data.put("location", this.location);
         data.put("size", this.size);
+        data.put("board", this.board);
         data.put("display_location", this.display_location);
         data.put("display_align", this.display_align);
         return data;
@@ -109,8 +110,9 @@ public class LightsOut extends BoardGame implements ConfigurationSerializable{
         return new LightsOut(
             (Location) args.get("location"),
             (Integer) args.get("size"),
-            Optional.ofNullable((Location) args.get("display_location")),
-            Optional.ofNullable((String)args.get("display_align"))
+            (boolean[][]) args.get("board"),
+            (Location) args.get("display_location"),
+            (String) args.get("display_align")
         );
     }
 }

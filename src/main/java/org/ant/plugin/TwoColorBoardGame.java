@@ -2,10 +2,10 @@ package org.ant.plugin;
 
 import org.ant.game.BoardGame;
 import org.ant.game.Game;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.scheduler.BukkitTask;
-
-import java.util.Optional;
 
 public class TwoColorBoardGame extends BoardGame {
     Game gameInstance;
@@ -18,40 +18,36 @@ public class TwoColorBoardGame extends BoardGame {
     int[] selected_point;
     BukkitTask display_selected_task;
 
-    public TwoColorBoardGame(Game gameInstance, Location location, Optional<Location> display_location, Optional<String> display_align, int size) {
+    public TwoColorBoardGame(Game gameInstance, Location location, Location display_location, String display_align, int size) {
         super(location, display_location, display_align, size);
         this.gameInstance = gameInstance;
         this.location = location;
-        display_location.ifPresent(value -> this.display_location = value);
-        display_align.ifPresent(s -> this.display_align = s);
+        this.display_location = display_location;
+        this.display_align = display_align;
         this.size = size;
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
     }
 
-    public void set_display(Location location, String display_align) {
-        super.set_display(location, display_align);
+    public void setDisplay(Location location, String display_align) {
+        super.setDisplay(location, display_align);
         this.display_location = location;
         this.display_align = display_align;
     }
-    public void remove_display() {
-        super.remove_display();
+    public void removeDisplay() {
+        super.removeDisplay();
         display_location = null;
         display_align = null;
     }
 
     private Material material(int status){
-        switch (status) {
-            case 0:
-                return Material.GLASS;
-            case 1:
-                return Material.BLACK_STAINED_GLASS;
-            case 2:
-                return Material.WHITE_STAINED_GLASS;
-            case 3:
-                return Material.YELLOW_STAINED_GLASS;
-        }
-        return Material.AIR;
+        return switch (status) {
+            case 0 -> Material.GLASS;
+            case 1 -> Material.BLACK_STAINED_GLASS;
+            case 2 -> Material.WHITE_STAINED_GLASS;
+            case 3 -> Material.YELLOW_STAINED_GLASS;
+            default -> Material.AIR;
+        };
     }
 
     boolean visible ;

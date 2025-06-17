@@ -9,113 +9,112 @@ import org.ant.plugin.Gomoku
 import org.ant.plugin.LightsOut
 import org.ant.plugin.Reversi
 import org.ant.plugin.ScoreFour
-import java.util.Optional
 
-@Suppress("UnstableApiUsage", "FunctionName")
+@Suppress("UnstableApiUsage")
 class Execute(private val instance: Game) {
-    fun set_board(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
+    fun setBoard(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
         val executor = ctx.source.executor
         if (executor != null) {
             val location = executor.location.block.location
             val name = ctx.getArgument("name", String::class.java)
             when (mode) {
-                "chess" -> instance.chess_games[name] = Chess(location)
-                "gomoku" -> instance.gomoku_games[name] = Gomoku(instance, location, Optional.empty(), Optional.empty())
-                "reversi" -> instance.reversi_games[name] = Reversi(instance, location, Optional.empty(), Optional.empty())
+                "chess" -> instance.chessGames[name] = Chess(location)
+                "gomoku" -> instance.gomokuGames[name] = Gomoku(instance, location, null, null, null)
+                "reversi" -> instance.reversiGames[name] = Reversi(instance, location, null, null, null)
                 "lights_out" -> {
                     val size = ctx.getArgument("size", Int::class.java)
-                    instance.lightsOut_games[name] = LightsOut(location, size, Optional.empty(), Optional.empty())
+                    instance.lightsOutGames[name] = LightsOut(location, size, null, null, null)
                 }
                 "connect_four" -> {
                     val align = ctx.getArgument("align", String::class.java)
-                    instance.connectFour_games[name] = ConnectFour(instance, location, align)
+                    instance.connectFourGames[name] = ConnectFour(instance, location, align, null)
                 }
-                "score_four" -> instance.scoreFour_games[name] = ScoreFour(instance, location)
+                "score_four" -> instance.scoreFourGames[name] = ScoreFour(instance, location, null)
             }
         }
         return Command.SINGLE_SUCCESS
     }
 
-    fun set_display(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
+    fun setDisplay(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
         val name = ctx.getArgument("name", String::class.java)
         val align = ctx.getArgument("align", String::class.java)
         val executor = ctx.source.executor
         if (executor != null) {
             val location = executor.location.block.location
             when (mode) {
-                "gomoku" -> if (instance.gomoku_games.containsKey(name)) {
-                    val gomoku = instance.gomoku_games[name]!!
-                    gomoku.remove_display()
-                    gomoku.set_display(location, align)
+                "gomoku" -> if (instance.gomokuGames.containsKey(name)) {
+                    val gomoku = instance.gomokuGames[name]!!
+                    gomoku.removeDisplay()
+                    gomoku.setDisplay(location, align)
                 }
-                "reversi" -> if (instance.reversi_games.containsKey(name)) {
-                    val reversi = instance.reversi_games[name]!!
-                    reversi.remove_display()
-                    reversi.set_display(location, align)
+                "reversi" -> if (instance.reversiGames.containsKey(name)) {
+                    val reversi = instance.reversiGames[name]!!
+                    reversi.removeDisplay()
+                    reversi.setDisplay(location, align)
                 }
-                "lights_out" -> if (instance.lightsOut_games.containsKey(name)) {
-                    val lightsOut = instance.lightsOut_games[name]!!
-                    lightsOut.remove_display()
-                    lightsOut.set_display(location, align)
+                "lights_out" -> if (instance.lightsOutGames.containsKey(name)) {
+                    val lightsOut = instance.lightsOutGames[name]!!
+                    lightsOut.removeDisplay()
+                    lightsOut.setDisplay(location, align)
                 }
             }
         }
         return Command.SINGLE_SUCCESS
     }
 
-    fun reset_board(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
+    fun resetBoard(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
         val name = ctx.getArgument("name", String::class.java)
         when (mode) {
-            "chess" -> if (instance.chess_games.containsKey(name)) instance.chess_games[name]!!.reset()
-            "gomoku" -> if (instance.gomoku_games.containsKey(name)) instance.gomoku_games[name]!!.reset()
-            "reversi" -> if (instance.reversi_games.containsKey(name)) instance.reversi_games[name]!!.reset()
-            "lights_out" -> if (instance.lightsOut_games.containsKey(name)) instance.lightsOut_games[name]!!.reset()
-            "connect_four" -> if (instance.connectFour_games.containsKey(name)) instance.connectFour_games[name]!!.reset()
-            "score_four" -> if (instance.scoreFour_games.containsKey(name)) instance.scoreFour_games[name]!!.reset()
+            "chess" -> if (instance.chessGames.containsKey(name)) instance.chessGames[name]!!.reset()
+            "gomoku" -> if (instance.gomokuGames.containsKey(name)) instance.gomokuGames[name]!!.reset(null)
+            "reversi" -> if (instance.reversiGames.containsKey(name)) instance.reversiGames[name]!!.reset(null)
+            "lights_out" -> if (instance.lightsOutGames.containsKey(name)) instance.lightsOutGames[name]!!.reset(null)
+            "connect_four" -> if (instance.connectFourGames.containsKey(name)) instance.connectFourGames[name]!!.reset(null)
+            "score_four" -> if (instance.scoreFourGames.containsKey(name)) instance.scoreFourGames[name]!!.reset(null)
         }
         return Command.SINGLE_SUCCESS
     }
 
-    fun remove_board(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
+    fun removeBoard(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
         val name = ctx.getArgument("name", String::class.java)
         when (mode) {
-            "chess" -> if (instance.chess_games.containsKey(name)) {
-                instance.chess_games[name]!!.remove()
-                instance.chess_games.remove(name)
+            "chess" -> if (instance.chessGames.containsKey(name)) {
+                instance.chessGames[name]!!.remove()
+                instance.chessGames.remove(name)
             }
-            "gomoku" -> if (instance.gomoku_games.containsKey(name)) {
-                instance.gomoku_games[name]!!.remove()
-                instance.gomoku_games[name]!!.remove_display()
-                instance.gomoku_games.remove(name)
+            "gomoku" -> if (instance.gomokuGames.containsKey(name)) {
+                instance.gomokuGames[name]!!.remove()
+                instance.gomokuGames[name]!!.removeDisplay()
+                instance.gomokuGames.remove(name)
             }
-            "reversi" -> if (instance.reversi_games.containsKey(name)) {
-                instance.reversi_games[name]!!.remove()
-                instance.reversi_games[name]!!.remove_display()
-                instance.reversi_games.remove(name)
+            "reversi" -> if (instance.reversiGames.containsKey(name)) {
+                instance.reversiGames[name]!!.remove()
+                instance.reversiGames[name]!!.removeDisplay()
+                instance.reversiGames.remove(name)
             }
-            "lights_out" -> if (instance.lightsOut_games.containsKey(name)) {
-                instance.lightsOut_games[name]!!.remove()
-                instance.lightsOut_games[name]!!.remove_display()
-                instance.lightsOut_games.remove(name)
+            "lights_out" -> if (instance.lightsOutGames.containsKey(name)) {
+                instance.lightsOutGames[name]!!.remove()
+                instance.lightsOutGames[name]!!.removeDisplay()
+                instance.lightsOutGames.remove(name)
             }
-            "connect_four" -> if (instance.connectFour_games.containsKey(name)) {
-                instance.connectFour_games[name]!!.remove()
-                instance.connectFour_games.remove(name)
+            "connect_four" -> if (instance.connectFourGames.containsKey(name)) {
+                instance.connectFourGames[name]!!.remove()
+                instance.connectFourGames.remove(name)
             }
-            "score_four" -> if (instance.scoreFour_games.containsKey(name)) {
-                instance.scoreFour_games[name]!!.remove()
-                instance.scoreFour_games.remove(name)
+            "score_four" -> if (instance.scoreFourGames.containsKey(name)) {
+                instance.scoreFourGames[name]!!.remove()
+                instance.scoreFourGames.remove(name)
             }
         }
         return Command.SINGLE_SUCCESS
     }
 
-    fun remove_display(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
+    fun removeDisplay(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
         val name = ctx.getArgument("name", String::class.java)
         when (mode) {
-            "gomoku" -> if (instance.gomoku_games.containsKey(name)) instance.gomoku_games[name]!!.remove_display()
-            "reversi" -> if (instance.reversi_games.containsKey(name)) instance.reversi_games[name]!!.remove_display()
-            "lights_out" -> if (instance.lightsOut_games.containsKey(name)) instance.lightsOut_games[name]!!.remove_display()
+            "gomoku" -> if (instance.gomokuGames.containsKey(name)) instance.gomokuGames[name]!!.removeDisplay()
+            "reversi" -> if (instance.reversiGames.containsKey(name)) instance.reversiGames[name]!!.removeDisplay()
+            "lights_out" -> if (instance.lightsOutGames.containsKey(name)) instance.lightsOutGames[name]!!.removeDisplay()
         }
         return Command.SINGLE_SUCCESS
     }

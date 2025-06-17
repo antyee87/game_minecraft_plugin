@@ -12,6 +12,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class ConnectFour implements ConfigurationSerializable {
     Game gameInstance;
@@ -27,16 +28,16 @@ public class ConnectFour implements ConfigurationSerializable {
     boolean end;
     Player[] minecraft_players;
 
-    public ConnectFour(Game gameInstance, Location location, String align) {
+    public ConnectFour(Game gameInstance, Location location, String align, int[][] board) {
         this.gameInstance = gameInstance;
         this.location = location;
         this.align = align;
         if(align.equals("x"))this.center = location.clone().add(3.5, 3, 0);
         else if(align.equals("z"))this.center = location.clone().add(0, 3, 3.5);
-        reset();
+        reset(board);
     }
-    public void reset(){
-        board = new int[6][7];
+    public void reset(int[][] boardPreset){
+        board = Objects.requireNonNullElseGet(boardPreset, () -> new int[6][7]);
         top = new int[7];
         selected = -1;
         if(display_selected_task != null)display_selected_task.cancel();
@@ -170,6 +171,9 @@ public class ConnectFour implements ConfigurationSerializable {
         Map<String, Object> data = new HashMap<>();
         data.put("location", this.location);
         data.put("align", this.align);
+        if (!end) {
+            data.put("board", this.board);
+        }
         return data;
     }
 
@@ -177,7 +181,8 @@ public class ConnectFour implements ConfigurationSerializable {
         return new ConnectFour(
             gameInstance,
             (Location) args.get("location"),
-            (String) args.get("align")
+            (String) args.get("align"),
+            (int[][]) args.get("board")
         );
     }
 }

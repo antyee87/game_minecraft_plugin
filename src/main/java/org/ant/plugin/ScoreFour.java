@@ -13,6 +13,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class ScoreFour implements ConfigurationSerializable, BasicValue {
     Game gameInstance;
@@ -27,14 +28,14 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
     boolean end;
     Player[] minecraft_players;
 
-    public ScoreFour(Game gameInstance, Location location) {
+    public ScoreFour(Game gameInstance, Location location, int[][][] board) {
         this.gameInstance = gameInstance;
         this.location = location;
         this.center = location.clone().add(3.5, 2.5, 3.5);
-        reset();
+        reset(board);
     }
-    public void reset(){
-        board = new int[4][4][4];
+    public void reset(int[][][] boardPreset){
+        board = Objects.requireNonNullElseGet(boardPreset, () -> new int[4][4][4]);
         top = new int[4][4];
         selected = null;
         if(display_selected_task != null)display_selected_task.cancel();
@@ -177,13 +178,17 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
     public Map<String, Object> serialize() {
         Map<String, Object> data = new HashMap<>();
         data.put("location", this.location);
+        if (!end) {
+            data.put("board", this.board);
+        }
         return data;
     }
 
     public static ScoreFour deserialize(Game gameInstance, Map<String, Object> args) {
         return new ScoreFour(
             gameInstance,
-            (Location) args.get("location")
+            (Location) args.get("location"),
+            (int[][][]) args.get("board")
         );
     }
 }

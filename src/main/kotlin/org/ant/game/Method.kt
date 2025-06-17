@@ -16,11 +16,11 @@ object Method {
     }
 
     @JvmStatic
-    fun yellow_red_firework(location: Location, isYellow: Boolean) {
+    fun firework(location: Location, isFirst: Boolean, firstColor: Color, secondColor: Color) {
         val firework = location.world.spawn(location.clone().add(0.0, 1.0, 0.0), Firework::class.java)
         val meta = firework.fireworkMeta
 
-        val mainColors = if (isYellow) arrayOf(Color.YELLOW, Color.NAVY) else arrayOf(Color.RED, Color.NAVY)
+        val mainColors = if (isFirst) arrayOf(firstColor, Color.NAVY) else arrayOf(secondColor, Color.NAVY)
         val fadeColor = Color.fromRGB(14602026)
 
         val effect = FireworkEffect.builder()
@@ -35,6 +35,13 @@ object Method {
         meta.power = 1
 
         firework.fireworkMeta = meta
+        // 黑 summon firework_rocket ~ ~1 ~ {LifeTime:20,FireworksItem:{id:"minecraft:firework_rocket",count:1,components:{"minecraft:fireworks":{explosions:[{shape:"large_ball",has_twinkle:true,has_trail:true,colors:[I;11250603,4408131],fade_colors:[I;14602026]}]}}}}
+        // 白 summon firework_rocket ~ ~1 ~ {LifeTime:20,FireworksItem:{id:"minecraft:firework_rocket",count:1,components:{"minecraft:fireworks":{explosions:[{shape:"large_ball",has_twinkle:true,has_trail:true,colors:[I;11250603,15790320],fade_colors:[I;14602026]}]}}}}
+    }
+
+    @JvmStatic
+    fun yellow_red_firework(location: Location, isYellow: Boolean) {
+        firework(location, isYellow, Color.YELLOW, Color.RED)
     }
 
     @JvmStatic

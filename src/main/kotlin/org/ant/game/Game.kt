@@ -9,15 +9,14 @@ import org.ant.plugin.ScoreFour
 import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.plugin.java.JavaPlugin
 
-@Suppress("PropertyName")
 class Game : JavaPlugin() {
     private val instance = this
-    var chess_games = HashMap<String, Chess>()
-    var gomoku_games = HashMap<String, Gomoku>()
-    var reversi_games = HashMap<String, Reversi>()
-    var lightsOut_games = HashMap<String, LightsOut>()
-    var connectFour_games = HashMap<String, ConnectFour>()
-    var scoreFour_games = HashMap<String, ScoreFour>()
+    var chessGames = HashMap<String, Chess>()
+    var gomokuGames = HashMap<String, Gomoku>()
+    var reversiGames = HashMap<String, Reversi>()
+    var lightsOutGames = HashMap<String, LightsOut>()
+    var connectFourGames = HashMap<String, ConnectFour>()
+    var scoreFourGames = HashMap<String, ScoreFour>()
 
     override fun onEnable() {
         logger.info("Ant遊戲插件已啟用")
