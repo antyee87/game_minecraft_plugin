@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.ant.game.Game;
 import org.ant.game.Method;
+import org.ant.game.TwoColorBoardGame;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -14,12 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class Reversi extends TwoColorBoardGame implements ConfigurationSerializable {
-    Game gameInstance;
     static int[][] vectors = {{1,0},{0,1},{1,1},{1,-1},{-1,0},{0,-1},{-1,-1},{-1,1}};
-    Location location;
-    Location center;
-    Location display_location;
-    String display_align;
     static final int size = 8;
 
     int[][] board;
@@ -30,26 +26,26 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     boolean moveable;
     Player[] minecraft_players;
 
-    public Reversi(Game gameInstance, Location location, int[][] board, Location display_location, String display_align) {
-        super(gameInstance, location, display_location, display_align, Reversi.size);
+    public Reversi(Game gameInstance, Location location, int[][] board, Location displayLocation, String displayAlign) {
+        super(gameInstance, location, displayLocation, displayAlign, Reversi.size);
         this.gameInstance = gameInstance;
         this.location = location;
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
-        this.display_location = display_location;
-        this.display_align = display_align;
+        this.displayLocation = displayLocation;
+        this.displayAlign = displayAlign;
         reset(board);
     }
 
-    public void setDisplay(Location location, String display_align) {
-        super.setDisplay(location, display_align);
-        this.display_location = location;
-        this.display_align = display_align;
+    public void setDisplay(Location location, String displayAlign) {
+        super.setDisplay(location, displayAlign);
+        this.displayLocation = location;
+        this.displayAlign = displayAlign;
     }
     public void removeDisplay() {
         super.removeDisplay();
-        this.display_location = null;
-        this.display_align = null;
+        this.displayLocation = null;
+        this.displayAlign = null;
     }
 
     public void reset(int[][] boardPreset) {
@@ -59,7 +55,7 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
         board[3][4] = 2;
         board[4][3] = 2;
         selected = null;
-        if(display_selected_task != null)display_selected_task.cancel();
+        if(displaySelectedTask != null) displaySelectedTask.cancel();
         player = 1;
         end = false;
         find_can_move();
@@ -68,7 +64,7 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
     }
 
     public void remove(){
-        if(display_selected_task != null)display_selected_task.cancel();
+        if(displaySelectedTask != null) displaySelectedTask.cancel();
         super.remove();
     }
 
@@ -112,12 +108,12 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
                 if(minecraft_players[player - 1] == null || minecraft_players[player - 1].equals(minecraft_player)) {
                     if (minecraft_players[player - 1] == null) minecraft_players[player - 1] = minecraft_player;
                     if (selected == null || selected[0] != x || selected[1] != y) {
-                        if (display_selected_task != null) display_selected_task.cancel();
-                        if (selected != null) display_single(selected[0], selected[1], 3);
+                        if (displaySelectedTask != null) displaySelectedTask.cancel();
+                        if (selected != null) displaySingle(selected[0], selected[1], 3);
                         selected = new int[]{x, y};
                         select(x, y, player, 3);
                     } else {
-                        display_selected_task.cancel();
+                        displaySelectedTask.cancel();
                         board[x][y] = player;
                         selected = null;
                         for (int i = 0; i < 8; i++) {
@@ -186,8 +182,8 @@ public class Reversi extends TwoColorBoardGame implements ConfigurationSerializa
         if (!end) {
             data.put("board", this.board);
         }
-        data.put("display_location", this.display_location);
-        data.put("display_align", this.display_align);
+        data.put("display_location", this.displayLocation);
+        data.put("display_align", this.displayAlign);
         return data;
     }
 

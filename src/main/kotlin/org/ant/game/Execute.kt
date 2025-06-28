@@ -2,7 +2,7 @@ package org.ant.game
 
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.context.CommandContext
-import io.papermc.paper.command.brigadier.CommandSourceStack
+import net.minecraft.commands.CommandSourceStack
 import org.ant.plugin.Chess
 import org.ant.plugin.ConnectFour
 import org.ant.plugin.Gomoku
@@ -10,7 +10,6 @@ import org.ant.plugin.LightsOut
 import org.ant.plugin.Reversi
 import org.ant.plugin.ScoreFour
 
-@Suppress("UnstableApiUsage")
 class Execute(private val instance: Game) {
     fun setBoard(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
         val executor = ctx.source.executor

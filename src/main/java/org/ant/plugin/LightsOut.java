@@ -15,35 +15,31 @@ import java.util.Objects;
 
 public class LightsOut extends BoardGame implements ConfigurationSerializable{
     static int[][] vectors = new int[][]{{0,0},{1,0},{0,1},{-1,0},{0,-1}};
-    Location location;
-    Location center;
-    Location display_location;
-    String display_align;
 
     final int size;
 
     boolean[][] board;
 
-    public LightsOut(Location location, int size, boolean[][] board, Location display_location, String display_align) {
-        super(location, display_location, display_align, size);
+    public LightsOut(Location location, int size, boolean[][] board, Location displayLocation, String displayAlign) {
+        super(location, displayLocation, displayAlign, size);
         this.location = location;
         this.size = size;
         this.center = location.clone();
         this.center.add((double) size /2, 0, (double) size /2);
-        this.display_location = display_location;
-        this.display_align = display_align;
+        this.displayLocation = displayLocation;
+        this.displayAlign = displayAlign;
         reset(board);
     }
 
     public void setDisplay(Location location, String display_align) {
         super.setDisplay(location, display_align);
-        this.display_location = location;
-        this.display_align = display_align;
+        this.displayLocation = location;
+        this.displayAlign = display_align;
     }
     public void removeDisplay() {
         super.removeDisplay();
-        this.display_location = null;
-        this.display_align = null;
+        this.displayLocation = null;
+        this.displayAlign = null;
     }
 
     public void reset(boolean[][] boardPreset){
@@ -65,16 +61,16 @@ public class LightsOut extends BoardGame implements ConfigurationSerializable{
                 Lightable lightable = (CopperBulb) block.getBlockData();
                 lightable.setLit(board[x][y]);
                 block.setBlockData(lightable);
-                if(display_location != null){
-                    if(display_align.equals("x")){
-                        block = display_location.clone().add(x,y,0).getBlock();
+                if(displayLocation != null){
+                    if(displayAlign.equals("x")){
+                        block = displayLocation.clone().add(x,y,0).getBlock();
                         block.setType(Material.WAXED_COPPER_BULB);
                         lightable = (CopperBulb) block.getBlockData();
                         lightable.setLit(board[x][y]);
                         block.setBlockData(lightable);
                     }
-                    else if(display_align.equals("z")){
-                        block = display_location.clone().add(0,x,y).getBlock();
+                    else if(displayAlign.equals("z")){
+                        block = displayLocation.clone().add(0,x,y).getBlock();
                         block.setType(Material.WAXED_COPPER_BULB);
                         lightable = (CopperBulb) block.getBlockData();
                         lightable.setLit(board[x][y]);
@@ -101,8 +97,8 @@ public class LightsOut extends BoardGame implements ConfigurationSerializable{
         data.put("location", this.location);
         data.put("size", this.size);
         data.put("board", this.board);
-        data.put("display_location", this.display_location);
-        data.put("display_align", this.display_align);
+        data.put("display_location", this.displayLocation);
+        data.put("display_align", this.displayAlign);
         return data;
     }
 

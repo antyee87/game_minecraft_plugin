@@ -4,278 +4,277 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
-import io.papermc.paper.command.brigadier.Commands
-import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
+import net.minecraft.commands.Commands
+import org.bukkit.Bukkit
+import org.bukkit.craftbukkit.CraftServer
 import java.util.concurrent.CompletableFuture
 
-@Suppress("UnstableApiUsage")
 class GameCommand(private val instance: Game) {
     fun register() {
-        instance.lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) { commands: ReloadableRegistrarEvent<Commands> ->
-            commands.registrar().dispatcher.register(
-                Commands.literal("antgame")
+        val nmsServer = (Bukkit.getServer() as CraftServer).server
+        val commands = nmsServer.commands
+        val dispatcher = commands.dispatcher
+        val antGameCommand = Commands.literal("antgame")
+            .then(
+                Commands.literal("game_operate")
+                    .requires { ctx -> ctx.sender.hasPermission("antgame.command.game_operate") }
                     .then(
-                        Commands.literal("game_operate")
-                            .requires { ctx -> ctx.sender.hasPermission("antgame.command.game_operate") }
+                        Commands.literal("chess")
                             .then(
-                                Commands.literal("chess")
+                                Commands.literal("board")
                                     .then(
-                                        Commands.literal("board")
+                                        Commands.literal("set")
                                             .then(
-                                                Commands.literal("set")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .executes { ctx -> Execute(instance).setBoard(ctx, "chess") }
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("reset")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> chessSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).resetBoard(ctx, "chess") }
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("remove")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> chessSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).removeBoard(ctx, "chess") }
-                                                    )
-                                            )
-                                    )
-                            )
-                            .then(
-                                Commands.literal("gomoku")
-                                    .then(
-                                        Commands.literal("board")
-                                            .then(
-                                                Commands.literal("set")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .executes { ctx -> Execute(instance).setBoard(ctx, "gomoku") }
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("reset")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> gomokuSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).resetBoard(ctx, "gomoku") }
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("remove")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> gomokuSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).removeBoard(ctx, "gomoku") }
-                                                    )
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .executes { ctx -> Execute(instance).setBoard(ctx, "chess") }
                                             )
                                     )
                                     .then(
-                                        Commands.literal("display")
+                                        Commands.literal("reset")
                                             .then(
-                                                Commands.literal("set")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> gomokuSuggestions(builder) }
-                                                            .then(
-                                                                Commands.argument("align", StringArgumentType.word())
-                                                                    .suggests { _, builder -> alignSuggestions(builder) }
-                                                                    .executes { ctx -> Execute(instance).setDisplay(ctx, "gomoku") }
-                                                            )
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("remove")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> gomokuSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).removeDisplay(ctx, "gomoku") }
-                                                    )
-                                            )
-                                    )
-                            )
-                            .then(
-                                Commands.literal("reversi")
-                                    .then(
-                                        Commands.literal("board")
-                                            .then(
-                                                Commands.literal("set")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .executes { ctx -> Execute(instance).setBoard(ctx, "reversi") }
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("reset")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> reversiSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).resetBoard(ctx, "reversi") }
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("remove")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> reversiSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).removeBoard(ctx, "reversi") }
-                                                    )
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> chessSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "chess") }
                                             )
                                     )
                                     .then(
-                                        Commands.literal("display")
+                                        Commands.literal("remove")
                                             .then(
-                                                Commands.literal("set")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> reversiSuggestions(builder) }
-                                                            .then(
-                                                                Commands.argument("align", StringArgumentType.word())
-                                                                    .suggests { _, builder -> alignSuggestions(builder) }
-                                                                    .executes { ctx -> Execute(instance).setDisplay(ctx, "reversi") }
-                                                            )
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("remove")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> reversiSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).removeDisplay(ctx, "reversi") }
-                                                    )
-                                            )
-                                    )
-                            )
-                            .then(
-                                Commands.literal("lights_out")
-                                    .then(
-                                        Commands.literal("board")
-                                            .then(
-                                                Commands.literal("set")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .then(
-                                                                Commands.argument("size", IntegerArgumentType.integer())
-                                                                    .executes { ctx -> Execute(instance).setBoard(ctx, "lights_out") }
-                                                            )
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("reset")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> lightsOutSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).resetBoard(ctx, "lights_out") }
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("remove")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> lightsOutSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).removeBoard(ctx, "lights_out") }
-                                                    )
-                                            )
-                                    )
-                                    .then(
-                                        Commands.literal("display")
-                                            .then(
-                                                Commands.literal("set")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> lightsOutSuggestions(builder) }
-                                                            .then(
-                                                                Commands.argument("align", StringArgumentType.word())
-                                                                    .suggests { _, builder -> alignSuggestions(builder) }
-                                                                    .executes { ctx -> Execute(instance).setDisplay(ctx, "lights_out") }
-                                                            )
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("remove")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> lightsOutSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).removeDisplay(ctx, "lights_out") }
-                                                    )
-                                            )
-                                    )
-                            )
-                            .then(
-                                Commands.literal("connect_four")
-                                    .then(
-                                        Commands.literal("board")
-                                            .then(
-                                                Commands.literal("set")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .then(
-                                                                Commands.argument("align", StringArgumentType.word())
-                                                                    .suggests { _, builder -> alignSuggestions(builder) }
-                                                                    .executes { ctx -> Execute(instance).setBoard(ctx, "connect_four") }
-                                                            )
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("reset")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> connectFourSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).resetBoard(ctx, "connect_four") }
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("remove")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> connectFourSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).removeBoard(ctx, "connect_four") }
-                                                    )
-                                            )
-                                    )
-                            )
-                            .then(
-                                Commands.literal("score_four")
-                                    .then(
-                                        Commands.literal("board")
-                                            .then(
-                                                Commands.literal("set")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .executes { ctx -> Execute(instance).setBoard(ctx, "score_four") }
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("reset")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> scoreFourSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).resetBoard(ctx, "score_four") }
-                                                    )
-                                            )
-                                            .then(
-                                                Commands.literal("remove")
-                                                    .then(
-                                                        Commands.argument("name", StringArgumentType.word())
-                                                            .suggests { _, builder -> scoreFourSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).removeBoard(ctx, "score_four") }
-                                                    )
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> chessSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "chess") }
                                             )
                                     )
                             )
                     )
                     .then(
-                        Commands.literal("save_config")
-                            .requires { sender -> sender.sender.hasPermission("antgame.command.save_config") }
-                            .executes { GameConfig.save(instance) }
+                        Commands.literal("gomoku")
+                            .then(
+                                Commands.literal("board")
+                                    .then(
+                                        Commands.literal("set")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .executes { ctx -> Execute(instance).setBoard(ctx, "gomoku") }
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("reset")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> gomokuSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "gomoku") }
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("remove")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> gomokuSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "gomoku") }
+                                            )
+                                    )
+                            )
+                            .then(
+                                Commands.literal("display")
+                                    .then(
+                                        Commands.literal("set")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> gomokuSuggestions(builder) }
+                                                    .then(
+                                                        Commands.argument("align", StringArgumentType.word())
+                                                            .suggests { _, builder -> alignSuggestions(builder) }
+                                                            .executes { ctx -> Execute(instance).setDisplay(ctx, "gomoku") }
+                                                    )
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("remove")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> gomokuSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).removeDisplay(ctx, "gomoku") }
+                                            )
+                                    )
+                            )
+                    )
+                    .then(
+                        Commands.literal("reversi")
+                            .then(
+                                Commands.literal("board")
+                                    .then(
+                                        Commands.literal("set")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .executes { ctx -> Execute(instance).setBoard(ctx, "reversi") }
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("reset")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> reversiSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "reversi") }
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("remove")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> reversiSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "reversi") }
+                                            )
+                                    )
+                            )
+                            .then(
+                                Commands.literal("display")
+                                    .then(
+                                        Commands.literal("set")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> reversiSuggestions(builder) }
+                                                    .then(
+                                                        Commands.argument("align", StringArgumentType.word())
+                                                            .suggests { _, builder -> alignSuggestions(builder) }
+                                                            .executes { ctx -> Execute(instance).setDisplay(ctx, "reversi") }
+                                                    )
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("remove")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> reversiSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).removeDisplay(ctx, "reversi") }
+                                            )
+                                    )
+                            )
+                    )
+                    .then(
+                        Commands.literal("lights_out")
+                            .then(
+                                Commands.literal("board")
+                                    .then(
+                                        Commands.literal("set")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .then(
+                                                        Commands.argument("size", IntegerArgumentType.integer())
+                                                            .executes { ctx -> Execute(instance).setBoard(ctx, "lights_out") }
+                                                    )
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("reset")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> lightsOutSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "lights_out") }
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("remove")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> lightsOutSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "lights_out") }
+                                            )
+                                    )
+                            )
+                            .then(
+                                Commands.literal("display")
+                                    .then(
+                                        Commands.literal("set")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> lightsOutSuggestions(builder) }
+                                                    .then(
+                                                        Commands.argument("align", StringArgumentType.word())
+                                                            .suggests { _, builder -> alignSuggestions(builder) }
+                                                            .executes { ctx -> Execute(instance).setDisplay(ctx, "lights_out") }
+                                                    )
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("remove")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> lightsOutSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).removeDisplay(ctx, "lights_out") }
+                                            )
+                                    )
+                            )
+                    )
+                    .then(
+                        Commands.literal("connect_four")
+                            .then(
+                                Commands.literal("board")
+                                    .then(
+                                        Commands.literal("set")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .then(
+                                                        Commands.argument("align", StringArgumentType.word())
+                                                            .suggests { _, builder -> alignSuggestions(builder) }
+                                                            .executes { ctx -> Execute(instance).setBoard(ctx, "connect_four") }
+                                                    )
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("reset")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> connectFourSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "connect_four") }
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("remove")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> connectFourSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "connect_four") }
+                                            )
+                                    )
+                            )
+                    )
+                    .then(
+                        Commands.literal("score_four")
+                            .then(
+                                Commands.literal("board")
+                                    .then(
+                                        Commands.literal("set")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .executes { ctx -> Execute(instance).setBoard(ctx, "score_four") }
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("reset")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> scoreFourSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "score_four") }
+                                            )
+                                    )
+                                    .then(
+                                        Commands.literal("remove")
+                                            .then(
+                                                Commands.argument("name", StringArgumentType.word())
+                                                    .suggests { _, builder -> scoreFourSuggestions(builder) }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "score_four") }
+                                            )
+                                    )
+                            )
                     )
             )
-        }
+            .then(
+                Commands.literal("save_config")
+                    .requires { sender -> sender.sender.hasPermission("antgame.command.save_config") }
+                    .executes { GameConfig.save(instance) }
+            )
+        dispatcher.register(antGameCommand)
     }
 
     private fun alignSuggestions(builder: SuggestionsBuilder): CompletableFuture<Suggestions> {

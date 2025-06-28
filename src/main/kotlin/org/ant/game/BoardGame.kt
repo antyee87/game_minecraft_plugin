@@ -6,11 +6,14 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Player
 
-open class BoardGame(var location: Location, displayLocation: Location?, displayAlign: String?, size: Int) {
+abstract class BoardGame(
+    @JvmField var location: Location,
+    @JvmField var displayLocation: Location?,
+    @JvmField var displayAlign: String?,
+    @JvmField var size: Int
+) {
+    @JvmField
     var center: Location
-    var displayLocation: Location? = null
-    var displayAlign: String? = null
-    var size: Int
 
     init {
         displayLocation.let { this.displayLocation = it }
@@ -20,13 +23,13 @@ open class BoardGame(var location: Location, displayLocation: Location?, display
         center.add(size.toDouble() / 2, 0.0, size.toDouble() / 2)
     }
 
-    open fun move(x: Int, z: Int, minecraft_player: Player): Boolean {
+    open fun move(x: Int, z: Int, player: Player): Boolean {
         return false
     }
 
-    open fun setDisplay(location: Location?, display_align: String?) {
+    open fun setDisplay(location: Location?, displayAlign: String?) {
         this.displayLocation = location
-        this.displayAlign = display_align
+        this.displayAlign = displayAlign
     }
 
     open fun isInside(x: Int, y: Int): Boolean {
@@ -47,29 +50,29 @@ open class BoardGame(var location: Location, displayLocation: Location?, display
     }
 
     open fun removeDisplay() {
-        if (this@BoardGame.displayLocation != null) {
+        if (this.displayLocation != null) {
             for (x in 0..<size) {
                 for (y in 0..<size) {
-                    if (this@BoardGame.displayAlign == "x") {
-                        this@BoardGame.displayLocation!!.world.setType(
-                            this@BoardGame.displayLocation!!.blockX + x,
-                            this@BoardGame.displayLocation!!.blockY + y,
-                            this@BoardGame.displayLocation!!.blockZ,
+                    if (this.displayAlign == "x") {
+                        this.displayLocation!!.world.setType(
+                            this.displayLocation!!.blockX + x,
+                            this.displayLocation!!.blockY + y,
+                            this.displayLocation!!.blockZ,
                             Material.AIR
                         )
-                    } else if (this@BoardGame.displayAlign == "z") {
-                        this@BoardGame.displayLocation!!.world.setType(
-                            this@BoardGame.displayLocation!!.blockX,
-                            this@BoardGame.displayLocation!!.blockY + x,
-                            this@BoardGame.displayLocation!!.blockZ + y,
+                    } else if (this.displayAlign == "z") {
+                        this.displayLocation!!.world.setType(
+                            this.displayLocation!!.blockX,
+                            this.displayLocation!!.blockY + x,
+                            this.displayLocation!!.blockZ + y,
                             Material.AIR
                         )
                     }
                 }
             }
         }
-        this@BoardGame.displayLocation = null
-        this@BoardGame.displayAlign = null
+        this.displayLocation = null
+        this.displayAlign = null
     }
 
     fun broadcast(message: Component) {
