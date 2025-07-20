@@ -1,19 +1,26 @@
 package org.ant.game
 
+import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
+import com.mojang.brigadier.tree.CommandNode
+import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
+import net.minecraft.server.dedicated.DedicatedServer
 import org.bukkit.Bukkit
 import org.bukkit.craftbukkit.CraftServer
 import java.util.concurrent.CompletableFuture
 
 class GameCommand(private val instance: Game) {
+    val nmsServer: DedicatedServer = (Bukkit.getServer() as CraftServer).server
+    val commands: Commands = nmsServer.commands
+    val dispatcher: CommandDispatcher<CommandSourceStack> = commands.dispatcher
+
+    lateinit var registeredCommands: List<CommandNode<CommandSourceStack>>
+
     fun register() {
-        val nmsServer = (Bukkit.getServer() as CraftServer).server
-        val commands = nmsServer.commands
-        val dispatcher = commands.dispatcher
         val antGameCommand = Commands.literal("antgame")
             .then(
                 Commands.literal("game_operate")
@@ -23,7 +30,7 @@ class GameCommand(private val instance: Game) {
                             .then(
                                 Commands.literal("board")
                                     .then(
-                                        Commands.literal("set")
+                                        Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .executes { ctx -> Execute(instance).setBoard(ctx, "chess") }
@@ -52,7 +59,7 @@ class GameCommand(private val instance: Game) {
                             .then(
                                 Commands.literal("board")
                                     .then(
-                                        Commands.literal("set")
+                                        Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .executes { ctx -> Execute(instance).setBoard(ctx, "gomoku") }
@@ -78,7 +85,7 @@ class GameCommand(private val instance: Game) {
                             .then(
                                 Commands.literal("display")
                                     .then(
-                                        Commands.literal("set")
+                                        Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> gomokuSuggestions(builder) }
@@ -104,7 +111,7 @@ class GameCommand(private val instance: Game) {
                             .then(
                                 Commands.literal("board")
                                     .then(
-                                        Commands.literal("set")
+                                        Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .executes { ctx -> Execute(instance).setBoard(ctx, "reversi") }
@@ -130,7 +137,7 @@ class GameCommand(private val instance: Game) {
                             .then(
                                 Commands.literal("display")
                                     .then(
-                                        Commands.literal("set")
+                                        Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> reversiSuggestions(builder) }
@@ -156,7 +163,7 @@ class GameCommand(private val instance: Game) {
                             .then(
                                 Commands.literal("board")
                                     .then(
-                                        Commands.literal("set")
+                                        Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .then(
@@ -185,7 +192,7 @@ class GameCommand(private val instance: Game) {
                             .then(
                                 Commands.literal("display")
                                     .then(
-                                        Commands.literal("set")
+                                        Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> lightsOutSuggestions(builder) }
@@ -211,7 +218,7 @@ class GameCommand(private val instance: Game) {
                             .then(
                                 Commands.literal("board")
                                     .then(
-                                        Commands.literal("set")
+                                        Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .then(
@@ -244,7 +251,7 @@ class GameCommand(private val instance: Game) {
                             .then(
                                 Commands.literal("board")
                                     .then(
-                                        Commands.literal("set")
+                                        Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .executes { ctx -> Execute(instance).setBoard(ctx, "score_four") }
@@ -274,7 +281,9 @@ class GameCommand(private val instance: Game) {
                     .requires { sender -> sender.sender.hasPermission("antgame.command.save_config") }
                     .executes { GameConfig.save(instance) }
             )
-        dispatcher.register(antGameCommand)
+        registeredCommands = listOf(
+            dispatcher.register(antGameCommand)
+        )
     }
 
     private fun alignSuggestions(builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
@@ -311,5 +320,13 @@ class GameCommand(private val instance: Game) {
     private fun scoreFourSuggestions(builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
         instance.scoreFourGames.keys.forEach { text -> builder.suggest(text) }
         return CompletableFuture.completedFuture(builder.build())
+    }
+
+    fun unregister() {
+        if (::registeredCommands.isInitialized) {
+            registeredCommands.forEach {
+                dispatcher.root.removeCommand(it.name)
+            }
+        }
     }
 }

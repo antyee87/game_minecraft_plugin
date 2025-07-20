@@ -10,6 +10,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -152,7 +153,9 @@ public class Gomoku extends TwoColorBoardGame implements ConfigurationSerializab
         return new Gomoku(
             gameInstance,
             (Location) args.get("location"),
-            (int[][]) args.get("board"),
+            ((List<List<Integer>>) args.get("board")).stream()
+                .map(y -> y.stream().mapToInt(Integer::intValue).toArray())
+                .toArray(int[][]::new),
             (Location) args.get("display_location"),
             (String)args.get("display_align")
         );

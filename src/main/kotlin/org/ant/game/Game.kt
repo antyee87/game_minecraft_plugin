@@ -11,6 +11,8 @@ import org.bukkit.plugin.java.JavaPlugin
 
 class Game : JavaPlugin() {
     private val instance = this
+    private val commandInstance = GameCommand(instance)
+    private var initSucceed = false
     var chessGames = HashMap<String, Chess>()
     var gomokuGames = HashMap<String, Gomoku>()
     var reversiGames = HashMap<String, Reversi>()
@@ -21,7 +23,7 @@ class Game : JavaPlugin() {
     override fun onEnable() {
         logger.info("Ant遊戲插件已啟用")
 
-        GameCommand(instance).register()
+        commandInstance.register()
 
         ConfigurationSerialization.registerClass(Chess::class.java)
         ConfigurationSerialization.registerClass(Gomoku::class.java)
@@ -31,13 +33,18 @@ class Game : JavaPlugin() {
         ConfigurationSerialization.registerClass(ScoreFour::class.java)
 
         server.pluginManager.registerEvents(OperateListener(instance), instance)
-        saveDefaultConfig()
 
+        saveDefaultConfig()
         GameConfig.load(instance)
+
+        initSucceed = true
     }
 
     override fun onDisable() {
-        GameConfig.save(instance)
+        commandInstance.unregister()
+        if (initSucceed) {
+            GameConfig.save(instance)
+        }
         logger.info("Ant遊戲插件已停用")
     }
 }

@@ -121,7 +121,7 @@ class OperateListener(private val instance: Game) : Listener {
     fun onPlayerMove(event: PlayerMoveEvent) {
         if (event.hasChangedPosition()) {
             val player = event.player
-            if (!player.allowFlight && (player.gameMode == GameMode.ADVENTURE || player.gameMode == GameMode.SURVIVAL)) {
+            if (player.gameMode == GameMode.ADVENTURE || player.gameMode == GameMode.SURVIVAL) {
                 setFly(scoreFourGames, player)
             }
         }
@@ -134,6 +134,7 @@ class OperateListener(private val instance: Game) : Listener {
             val center = game.center
             val distance = location.distance(center)
             if (distance < game.size.toDouble() / 2 + 5) {
+                if (player.allowFlight) return@forEach
                 player.setMetadata(center.toString() + "is_flying", FixedMetadataValue(instance, true))
                 player.allowFlight = true
             } else if (player.hasMetadata(center.toString() + "is_flying")) {

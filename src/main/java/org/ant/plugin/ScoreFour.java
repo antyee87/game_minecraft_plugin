@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -188,7 +189,12 @@ public class ScoreFour implements ConfigurationSerializable, BasicValue {
         return new ScoreFour(
             gameInstance,
             (Location) args.get("location"),
-            (int[][][]) args.get("board")
+            ((List<List<List<Integer>>>) args.get("board")).stream()
+                .map(y ->
+                    y.stream().map(z -> z.stream().mapToInt(Integer::intValue).toArray())
+                        .toArray(int[][]::new)
+                )
+                .toArray(int[][][]::new)
         );
     }
 }

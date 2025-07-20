@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -182,7 +183,9 @@ public class ConnectFour implements ConfigurationSerializable {
             gameInstance,
             (Location) args.get("location"),
             (String) args.get("align"),
-            (int[][]) args.get("board")
+            ((List<List<Integer>>) args.get("board")).stream()
+                .map(y -> y.stream().mapToInt(Integer::intValue).toArray())
+                .toArray(int[][]::new)
         );
     }
 }

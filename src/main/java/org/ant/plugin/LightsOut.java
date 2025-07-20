@@ -10,6 +10,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -106,7 +107,15 @@ public class LightsOut extends BoardGame implements ConfigurationSerializable{
         return new LightsOut(
             (Location) args.get("location"),
             (Integer) args.get("size"),
-            (boolean[][]) args.get("board"),
+            ((List<List<Boolean>>) args.get("board")).stream()
+                .map(y -> {
+                    boolean[] array = new boolean[y.size()];
+                    for (int i = 0; i < y.size(); i++) {
+                        array[i] = y.get(i);
+                    }
+                    return array;
+                })
+                .toArray(boolean[][]::new),
             (Location) args.get("display_location"),
             (String) args.get("display_align")
         );
