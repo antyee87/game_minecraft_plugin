@@ -1,18 +1,18 @@
 package org.ant.game
 
 import net.kyori.adventure.text.Component
+import org.ant.game.gameimpl.Method
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Player
 
 abstract class BoardGame(
-    @JvmField var location: Location,
-    @JvmField var displayLocation: Location?,
-    @JvmField var displayAlign: String?,
-    @JvmField var size: Int
+    var location: Location,
+    var displayLocation: Location?,
+    var displayAlign: String?,
+    var size: Int
 ) {
-    @JvmField
     var center: Location
 
     init {
@@ -23,7 +23,7 @@ abstract class BoardGame(
         center.add(size.toDouble() / 2, 0.0, size.toDouble() / 2)
     }
 
-    open fun move(x: Int, z: Int, player: Player): Boolean {
+    open fun move(x: Int, z: Int, minecraftPlayer: Player): Boolean {
         return false
     }
 

@@ -279,7 +279,7 @@ class GameCommand(private val instance: Game) {
             .then(
                 Commands.literal("save_config")
                     .requires { sender -> sender.sender.hasPermission("antgame.command.save_config") }
-                    .executes { GameConfig.save(instance) }
+                    .executes { instance.gameConfig.save() }
             )
         registeredCommands = listOf(
             dispatcher.register(antGameCommand)

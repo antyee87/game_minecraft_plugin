@@ -3,12 +3,12 @@ package org.ant.game
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.context.CommandContext
 import net.minecraft.commands.CommandSourceStack
-import org.ant.plugin.Chess
-import org.ant.plugin.ConnectFour
-import org.ant.plugin.Gomoku
-import org.ant.plugin.LightsOut
-import org.ant.plugin.Reversi
-import org.ant.plugin.ScoreFour
+import org.ant.game.gameimpl.Chess
+import org.ant.game.gameimpl.ConnectFour
+import org.ant.game.gameimpl.Gomoku
+import org.ant.game.gameimpl.LightsOut
+import org.ant.game.gameimpl.Reversi
+import org.ant.game.gameimpl.ScoreFour
 
 class Execute(private val instance: Game) {
     fun setBoard(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
@@ -18,17 +18,17 @@ class Execute(private val instance: Game) {
             val name = ctx.getArgument("name", String::class.java)
             when (mode) {
                 "chess" -> instance.chessGames[name] = Chess(location)
-                "gomoku" -> instance.gomokuGames[name] = Gomoku(instance, location, null, null, null)
-                "reversi" -> instance.reversiGames[name] = Reversi(instance, location, null, null, null)
+                "gomoku" -> instance.gomokuGames[name] = Gomoku(instance, location, null, null)
+                "reversi" -> instance.reversiGames[name] = Reversi(instance, location, null, null)
                 "lights_out" -> {
                     val size = ctx.getArgument("size", Int::class.java)
-                    instance.lightsOutGames[name] = LightsOut(location, size, null, null, null)
+                    instance.lightsOutGames[name] = LightsOut(location, size, null, null)
                 }
                 "connect_four" -> {
                     val align = ctx.getArgument("align", String::class.java)
-                    instance.connectFourGames[name] = ConnectFour(instance, location, align, null)
+                    instance.connectFourGames[name] = ConnectFour(instance, location, align)
                 }
-                "score_four" -> instance.scoreFourGames[name] = ScoreFour(instance, location, null)
+                "score_four" -> instance.scoreFourGames[name] = ScoreFour(instance, location)
             }
         }
         return Command.SINGLE_SUCCESS
@@ -64,12 +64,12 @@ class Execute(private val instance: Game) {
     fun resetBoard(ctx: CommandContext<CommandSourceStack>, mode: String): Int {
         val name = ctx.getArgument("name", String::class.java)
         when (mode) {
-            "chess" -> if (instance.chessGames.containsKey(name)) instance.chessGames[name]!!.reset()
-            "gomoku" -> if (instance.gomokuGames.containsKey(name)) instance.gomokuGames[name]!!.reset(null)
-            "reversi" -> if (instance.reversiGames.containsKey(name)) instance.reversiGames[name]!!.reset(null)
-            "lights_out" -> if (instance.lightsOutGames.containsKey(name)) instance.lightsOutGames[name]!!.reset(null)
-            "connect_four" -> if (instance.connectFourGames.containsKey(name)) instance.connectFourGames[name]!!.reset(null)
-            "score_four" -> if (instance.scoreFourGames.containsKey(name)) instance.scoreFourGames[name]!!.reset(null)
+            "chess" -> instance.chessGames[name]?.reset()
+            "gomoku" -> instance.gomokuGames[name]?.reset(null)
+            "reversi" -> instance.reversiGames[name]?.reset(null)
+            "lights_out" -> instance.lightsOutGames[name]?.reset(null)
+            "connect_four" -> instance.connectFourGames[name]?.reset(null, null)
+            "score_four" -> instance.scoreFourGames[name]?.reset(null, null)
         }
         return Command.SINGLE_SUCCESS
     }

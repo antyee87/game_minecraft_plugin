@@ -1,5 +1,6 @@
 package org.ant.game
 
+import org.ant.game.gameimpl.Method
 import org.bukkit.GameMode
 import org.bukkit.Sound
 import org.bukkit.block.Block
@@ -75,10 +76,10 @@ class OperateListener(private val instance: Game) : Listener {
                         val y = point.blockY - board.blockY
                         val z = point.blockZ - board.blockZ
                         if (y <= 6) {
-                            if (game.align == "x" && point.blockZ == board.blockZ && game.is_inside(0, x)) {
+                            if (game.align == "x" && point.blockZ == board.blockZ && game.isInside(0, x)) {
                                 if (game.move(x, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
                                 found = true
-                            } else if (game.align == "z" && point.blockX == board.blockX && game.is_inside(0, z)) {
+                            } else if (game.align == "z" && point.blockX == board.blockX && game.isInside(0, z)) {
                                 if (game.move(z, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
                                 found = true
                             }
@@ -92,7 +93,7 @@ class OperateListener(private val instance: Game) : Listener {
                         val y = point.blockY - board.blockY
                         val z = (point.blockZ - board.blockZ) / 2
                         if (Method.isInRange(y, 0, 4)) {
-                            if (game.is_inside(x, z, 0)) {
+                            if (game.isInside(x, z, 0)) {
                                 if (game.move(x, z, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
                                 found = true
                             }

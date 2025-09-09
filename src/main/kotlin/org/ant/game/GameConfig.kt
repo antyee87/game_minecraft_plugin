@@ -1,16 +1,17 @@
 package org.ant.game
 
 import com.mojang.brigadier.Command
-import org.ant.plugin.Chess
-import org.ant.plugin.ConnectFour
-import org.ant.plugin.Gomoku
-import org.ant.plugin.LightsOut
-import org.ant.plugin.Reversi
-import org.ant.plugin.ScoreFour
+import org.ant.game.gameimpl.Chess
+import org.ant.game.gameimpl.ConnectFour
+import org.ant.game.gameimpl.Gomoku
+import org.ant.game.gameimpl.LightsOut
+import org.ant.game.gameimpl.Reversi
+import org.ant.game.gameimpl.ScoreFour
 
-object GameConfig {
-    fun load(instance: Game) {
-        val config = instance.config
+class GameConfig(private val instance: Game) {
+    val config = instance.config
+
+    fun load() {
         // chess games deserialize
         var section = config.getConfigurationSection("chess_games")
         if (section != null) {
@@ -61,8 +62,7 @@ object GameConfig {
         }
     }
 
-    fun save(instance: Game): Int {
-        val config = instance.config
+    fun save(): Int {
         // chess games serialize
         config["chess_games"] = null
         for ((key, value) in instance.chessGames) {
@@ -93,6 +93,7 @@ object GameConfig {
         for ((key, value) in instance.scoreFourGames) {
             config["scoreFour_games.$key"] = value.serialize()
         }
+
         instance.saveConfig()
 
         return Command.SINGLE_SUCCESS

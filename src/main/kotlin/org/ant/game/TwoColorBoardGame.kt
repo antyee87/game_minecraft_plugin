@@ -6,7 +6,7 @@ import org.bukkit.Material
 import org.bukkit.scheduler.BukkitTask
 
 abstract class TwoColorBoardGame(
-    @JvmField var gameInstance: Game,
+    var gameInstance: Game,
     location: Location,
     displayLocation: Location?,
     displayAlign: String?,
@@ -14,7 +14,6 @@ abstract class TwoColorBoardGame(
 ) : BoardGame(location, displayLocation, displayAlign, size) {
     var selectedPoint: IntArray? = null
 
-    @JvmField
     var displaySelectedTask: BukkitTask? = null
 
     override fun setDisplay(location: Location?, displayAlign: String?) {
@@ -64,10 +63,10 @@ abstract class TwoColorBoardGame(
         )
     }
 
-    fun display(board: Array<IntArray?>) {
+    fun display(board: Array<IntArray>) {
         for (x in 0..<size) {
             for (y in 0..<size) {
-                displaySingle(x, y, board[x]!![y])
+                displaySingle(x, y, board[x][y])
             }
         }
     }
