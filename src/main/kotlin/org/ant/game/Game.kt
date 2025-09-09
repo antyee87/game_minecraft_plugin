@@ -1,28 +1,33 @@
 package org.ant.game
 
-import org.ant.plugin.Chess
-import org.ant.plugin.ConnectFour
-import org.ant.plugin.Gomoku
-import org.ant.plugin.LightsOut
-import org.ant.plugin.Reversi
-import org.ant.plugin.ScoreFour
+import org.ant.game.gameimpl.Chess
+import org.ant.game.gameimpl.ConnectFour
+import org.ant.game.gameimpl.Gomoku
+import org.ant.game.gameimpl.LightsOut
+import org.ant.game.gameimpl.Reversi
+import org.ant.game.gameimpl.ScoreFour
 import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.plugin.java.JavaPlugin
 
-@Suppress("PropertyName")
 class Game : JavaPlugin() {
     private val instance = this
-    var chess_games = HashMap<String, Chess>()
-    var gomoku_games = HashMap<String, Gomoku>()
-    var reversi_games = HashMap<String, Reversi>()
-    var lightsOut_games = HashMap<String, LightsOut>()
-    var connectFour_games = HashMap<String, ConnectFour>()
-    var scoreFour_games = HashMap<String, ScoreFour>()
+    private val commandInstance = GameCommand(instance)
+    private var initSucceed = false
+
+    val chessGames = HashMap<String, Chess>()
+    val gomokuGames = HashMap<String, Gomoku>()
+    val reversiGames = HashMap<String, Reversi>()
+    val lightsOutGames = HashMap<String, LightsOut>()
+    val connectFourGames = HashMap<String, ConnectFour>()
+    val scoreFourGames = HashMap<String, ScoreFour>()
+
+    val gameConfig = GameConfig(instance)
+    val gameRecord = GameRecord(instance, "record.yml")
 
     override fun onEnable() {
         logger.info("Ant遊戲插件已啟用")
 
-        GameCommand(instance).register()
+        commandInstance.register()
 
         ConfigurationSerialization.registerClass(Chess::class.java)
         ConfigurationSerialization.registerClass(Gomoku::class.java)
@@ -32,13 +37,20 @@ class Game : JavaPlugin() {
         ConfigurationSerialization.registerClass(ScoreFour::class.java)
 
         server.pluginManager.registerEvents(OperateListener(instance), instance)
-        saveDefaultConfig()
 
-        GameConfig.load(instance)
+        saveDefaultConfig()
+        gameConfig.load()
+        gameRecord.load()
+
+        initSucceed = true
     }
 
     override fun onDisable() {
-        GameConfig.save(instance)
+        // commandInstance.unregister()
+        if (initSucceed) {
+            gameConfig.save()
+            gameRecord.save()
+        }
         logger.info("Ant遊戲插件已停用")
     }
 }

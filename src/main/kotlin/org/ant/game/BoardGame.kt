@@ -1,39 +1,38 @@
 package org.ant.game
 
 import net.kyori.adventure.text.Component
+import org.ant.game.gameimpl.Method
 import org.bukkit.Color
-import org.bukkit.FireworkEffect
 import org.bukkit.Location
 import org.bukkit.Material
-import org.bukkit.entity.Firework
 import org.bukkit.entity.Player
-import java.util.Optional
 
-@Suppress("LocalVariableName", "PropertyName", "FunctionName")
-open class BoardGame(var location: Location, display_location: Optional<Location>, display_align: Optional<String>, size: Int) {
-    var center: Location
-    var display_location: Location? = null
-    var display_align: String? = null
+abstract class BoardGame(
+    var location: Location,
+    var displayLocation: Location?,
+    var displayAlign: String?,
     var size: Int
+) {
+    var center: Location
 
     init {
-        display_location.ifPresent { value: Location? -> this.display_location = value }
-        display_align.ifPresent { s: String? -> this.display_align = s }
+        displayLocation.let { this.displayLocation = it }
+        displayAlign.let { this.displayAlign = it }
         this.size = size
         this.center = location.clone()
         center.add(size.toDouble() / 2, 0.0, size.toDouble() / 2)
     }
 
-    open fun move(x: Int, z: Int, minecraft_player: Player): Boolean {
+    open fun move(x: Int, z: Int, minecraftPlayer: Player): Boolean {
         return false
     }
 
-    open fun set_display(location: Location?, display_align: String?) {
-        this.display_location = location
-        this.display_align = display_align
+    open fun setDisplay(location: Location?, displayAlign: String?) {
+        this.displayLocation = location
+        this.displayAlign = displayAlign
     }
 
-    open fun is_inside(x: Int, y: Int): Boolean {
+    open fun isInside(x: Int, y: Int): Boolean {
         return x in 0..<size && y in 0..<size
     }
 
@@ -50,30 +49,30 @@ open class BoardGame(var location: Location, display_location: Optional<Location
         }
     }
 
-    open fun remove_display() {
-        if (display_location != null) {
+    open fun removeDisplay() {
+        if (this.displayLocation != null) {
             for (x in 0..<size) {
                 for (y in 0..<size) {
-                    if (display_align == "x") {
-                        display_location!!.world.setType(
-                            display_location!!.blockX + x,
-                            display_location!!.blockY + y,
-                            display_location!!.blockZ,
+                    if (this.displayAlign == "x") {
+                        this.displayLocation!!.world.setType(
+                            this.displayLocation!!.blockX + x,
+                            this.displayLocation!!.blockY + y,
+                            this.displayLocation!!.blockZ,
                             Material.AIR
                         )
-                    } else if (display_align == "z") {
-                        display_location!!.world.setType(
-                            display_location!!.blockX,
-                            display_location!!.blockY + x,
-                            display_location!!.blockZ + y,
+                    } else if (this.displayAlign == "z") {
+                        this.displayLocation!!.world.setType(
+                            this.displayLocation!!.blockX,
+                            this.displayLocation!!.blockY + x,
+                            this.displayLocation!!.blockZ + y,
                             Material.AIR
                         )
                     }
                 }
             }
         }
-        display_location = null
-        display_align = null
+        this.displayLocation = null
+        this.displayAlign = null
     }
 
     fun broadcast(message: Component) {
@@ -85,25 +84,6 @@ open class BoardGame(var location: Location, display_location: Optional<Location
     }
 
     fun firework(location: Location, isBlack: Boolean) {
-        val firework = location.world.spawn(location.clone().add(0.0, 1.0, 0.0), Firework::class.java)
-        val meta = firework.fireworkMeta
-
-        val mainColors = if (isBlack) arrayOf(Color.BLACK, Color.NAVY) else arrayOf(Color.WHITE, Color.NAVY)
-        val fadeColor = Color.fromRGB(14602026)
-
-        val effect = FireworkEffect.builder()
-            .with(FireworkEffect.Type.BALL_LARGE)
-            .withColor(*mainColors)
-            .withFade(fadeColor)
-            .trail(true)
-            .flicker(true)
-            .build()
-
-        meta.addEffect(effect)
-        meta.power = 1
-
-        firework.fireworkMeta = meta
-        // 黑 summon firework_rocket ~ ~1 ~ {LifeTime:20,FireworksItem:{id:"minecraft:firework_rocket",count:1,components:{"minecraft:fireworks":{explosions:[{shape:"large_ball",has_twinkle:true,has_trail:true,colors:[I;11250603,4408131],fade_colors:[I;14602026]}]}}}}
-        // 白 summon firework_rocket ~ ~1 ~ {LifeTime:20,FireworksItem:{id:"minecraft:firework_rocket",count:1,components:{"minecraft:fireworks":{explosions:[{shape:"large_ball",has_twinkle:true,has_trail:true,colors:[I;11250603,15790320],fade_colors:[I;14602026]}]}}}}
+        Method.firework(location, isBlack, Color.BLACK, Color.WHITE)
     }
 }

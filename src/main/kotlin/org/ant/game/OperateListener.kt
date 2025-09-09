@@ -1,7 +1,6 @@
 package org.ant.game
 
-import org.ant.plugin.ConnectFour
-import org.ant.plugin.ScoreFour
+import org.ant.game.gameimpl.Method
 import org.bukkit.GameMode
 import org.bukkit.Sound
 import org.bukkit.block.Block
@@ -15,14 +14,13 @@ import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.metadata.FixedMetadataValue
 import java.util.UUID
 
-@Suppress("PrivatePropertyName")
 class OperateListener(private val instance: Game) : Listener {
-    private val chess_games = instance.chess_games.values
-    private val gomoku_games = instance.gomoku_games.values
-    private val reversi_games = instance.reversi_games.values
-    private val lightsOut_games = instance.lightsOut_games.values
-    private val connectFours_games = instance.connectFour_games.values
-    private val scoreFour_games = instance.scoreFour_games.values
+    private val chessGames = instance.chessGames.values
+    private val gomokuGames = instance.gomokuGames.values
+    private val reversiGames = instance.reversiGames.values
+    private val lightsOutGames = instance.lightsOutGames.values
+    private val connectFourGames = instance.connectFourGames.values
+    private val scoreFourGames = instance.scoreFourGames.values
 
     private val cooldowns = HashMap<UUID, Long>()
 
@@ -43,18 +41,18 @@ class OperateListener(private val instance: Game) : Listener {
                     val point = block.location
                     found = false
 
-                    chess_games.forEach { game ->
+                    chessGames.forEach { game ->
                         val board = game.location
                         val x = point.blockX - board.blockX
                         val y = point.blockY - board.blockY
                         val z = point.blockZ - board.blockZ
                         if (Method.isInRange(y, 0, 1) && game.promotable == null) {
-                            if (game.is_inside(x, z)) {
+                            if (game.isInside(x, z)) {
                                 if (game.move(x, z, y, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
                                 found = true
                             }
                         } else if (Method.isInRange(y, 2, 5) && game.promotable != null) {
-                            if (game.is_inside(x, z)) {
+                            if (game.isInside(x, z)) {
                                 game.promote(y, player)
                                 block.world.playSound(block.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f)
                                 return@forEach
@@ -63,25 +61,25 @@ class OperateListener(private val instance: Game) : Listener {
                     }
                     if (found) return
 
-                    simpleGameClick(gomoku_games, block, player)
+                    simpleGameClick(gomokuGames, block, player)
                     if (found) return
 
-                    simpleGameClick(reversi_games, block, player)
+                    simpleGameClick(reversiGames, block, player)
                     if (found) return
 
-                    simpleGameClick(lightsOut_games, block, player)
+                    simpleGameClick(lightsOutGames, block, player)
                     if (found) return
 
-                    connectFours_games.forEach { game: ConnectFour ->
+                    connectFourGames.forEach { game ->
                         val board = game.location
                         val x = point.blockX - board.blockX
                         val y = point.blockY - board.blockY
                         val z = point.blockZ - board.blockZ
                         if (y <= 6) {
-                            if (game.align == "x" && point.blockZ == board.blockZ && game.is_inside(0, x)) {
+                            if (game.align == "x" && point.blockZ == board.blockZ && game.isInside(0, x)) {
                                 if (game.move(x, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
                                 found = true
-                            } else if (game.align == "z" && point.blockX == board.blockX && game.is_inside(0, z)) {
+                            } else if (game.align == "z" && point.blockX == board.blockX && game.isInside(0, z)) {
                                 if (game.move(z, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
                                 found = true
                             }
@@ -89,13 +87,13 @@ class OperateListener(private val instance: Game) : Listener {
                     }
                     if (found) return
 
-                    scoreFour_games.forEach { game: ScoreFour ->
+                    scoreFourGames.forEach { game ->
                         val board = game.location
                         val x = (point.blockX - board.blockX) / 2
                         val y = point.blockY - board.blockY
                         val z = (point.blockZ - board.blockZ) / 2
                         if (Method.isInRange(y, 0, 4)) {
-                            if (game.is_inside(x, z, 0)) {
+                            if (game.isInside(x, z, 0)) {
                                 if (game.move(x, z, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
                                 found = true
                             }
@@ -109,11 +107,11 @@ class OperateListener(private val instance: Game) : Listener {
 
     private fun <T : BoardGame> simpleGameClick(games: Collection<T>, block: Block, player: Player) {
         val point = block.location
-        games.forEach { game: T ->
+        games.forEach { game ->
             val board = game.location
             val x = point.blockX - board.blockX
             val z = point.blockZ - board.blockZ
-            if (point.blockY == board.blockY && game.is_inside(x, z)) {
+            if (point.blockY == board.blockY && game.isInside(x, z)) {
                 if (game.move(x, z, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
                 found = true
             }
@@ -125,19 +123,19 @@ class OperateListener(private val instance: Game) : Listener {
         if (event.hasChangedPosition()) {
             val player = event.player
             if (player.gameMode == GameMode.ADVENTURE || player.gameMode == GameMode.SURVIVAL) {
-                set_fly(scoreFour_games, player)
+                setFly(scoreFourGames, player)
             }
         }
     }
 
-    @Suppress("FunctionName")
-    private fun <T : BasicValue> set_fly(games: Collection<T>, player: Player) {
+    private fun <T : BasicValue> setFly(games: Collection<T>, player: Player) {
         val location = player.location
 
         games.forEach { game: T ->
             val center = game.center
             val distance = location.distance(center)
             if (distance < game.size.toDouble() / 2 + 5) {
+                if (player.allowFlight) return@forEach
                 player.setMetadata(center.toString() + "is_flying", FixedMetadataValue(instance, true))
                 player.allowFlight = true
             } else if (player.hasMetadata(center.toString() + "is_flying")) {
