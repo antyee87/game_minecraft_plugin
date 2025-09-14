@@ -8,15 +8,11 @@ import java.io.File
 class GameRecord(instance: Game, fileName: String) {
     val file = File(instance.dataFolder, fileName)
     val config: FileConfiguration = YamlConfiguration.loadConfiguration(file)
+    val configs = instance.configs
 
-    val configs = mapOf<String, Map<String, RecordSerializable>>(
-        // "chess_games" to instance.chessGames,
-        "gomoku_games" to instance.gomokuGames,
-        "reversi_games" to instance.reversiGames,
-        "lightsOut_games" to instance.lightsOutGames,
-        "connectFour_games" to instance.connectFourGames,
-        "scoreFour_games" to instance.scoreFourGames
-    )
+    init {
+        load()
+    }
 
     fun load(): Int {
         configs.forEach { (configKey, gameInstances) ->

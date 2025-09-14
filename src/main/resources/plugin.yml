@@ -1,7 +1,7 @@
 name: AntGame
-version: "1.0"
+version: "1.1"
 main: org.ant.game.Game
-api-version: "1.21.4"
+api-version: "1.21.8"
 authors: [ Antonio111 ]
 description: Ant development
 dependencies:
