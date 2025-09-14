@@ -3,7 +3,8 @@ package org.ant.game.gameimpl
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.ant.game.Game
-import org.ant.game.RecordSerializable
+import org.ant.game.GameDeSerializable
+import org.ant.game.GameSerializable
 import org.ant.game.gameimpl.Method.yellowRedFirework
 import org.ant.game.gameimpl.Method.yellowRedMaterial
 import org.bukkit.Bukkit
@@ -11,16 +12,12 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.block.Block
-import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 
-@Suppress("DuplicatedCode")
-class ConnectFour(var gameInstance: Game, var location: Location, var align: String) :
-    ConfigurationSerializable,
-    RecordSerializable {
-    companion object {
-        fun deserialize(gameInstance: Game, args: MutableMap<String, Any?>): ConnectFour {
+class ConnectFour(var gameInstance: Game, var location: Location, var align: String) : GameSerializable {
+    companion object : GameDeSerializable {
+        override fun deserialize(gameInstance: Game, args: Map<String, Any?>): ConnectFour {
             return ConnectFour(
                 gameInstance,
                 args["location"] as Location,

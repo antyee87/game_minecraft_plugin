@@ -4,7 +4,8 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.ant.game.BasicValue
 import org.ant.game.Game
-import org.ant.game.RecordSerializable
+import org.ant.game.GameDeSerializable
+import org.ant.game.GameSerializable
 import org.ant.game.gameimpl.Method.broadcast
 import org.ant.game.gameimpl.Method.yellowRedFirework
 import org.ant.game.gameimpl.Method.yellowRedMaterial
@@ -12,22 +13,21 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Sound
-import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 
 class ScoreFour(var gameInstance: Game, override val location: Location) :
-    ConfigurationSerializable,
-    RecordSerializable,
+    GameSerializable,
     BasicValue {
-    companion object {
-        fun deserialize(gameInstance: Game, args: Map<String?, Any?>): ScoreFour {
+    companion object : GameDeSerializable {
+        override fun deserialize(gameInstance: Game, args: Map<String, Any?>): ScoreFour {
             return ScoreFour(
                 gameInstance,
                 args["location"] as Location
             )
         }
     }
+
     override var center = location.clone().add(3.5, 2.5, 3.5)
     override val size = 7
 

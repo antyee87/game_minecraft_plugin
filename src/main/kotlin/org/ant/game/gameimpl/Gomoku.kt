@@ -3,22 +3,21 @@ package org.ant.game.gameimpl
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.ant.game.Game
-import org.ant.game.RecordSerializable
+import org.ant.game.GameDeSerializable
+import org.ant.game.GameSerializable
 import org.ant.game.TwoColorBoardGame
 import org.bukkit.Location
 import org.bukkit.Sound
-import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.entity.Player
 
 class Gomoku(gameInstance: Game, location: Location, displayLocation: Location?, displayAlign: String?) :
     TwoColorBoardGame(gameInstance, location, displayLocation, displayAlign, SIZE),
-    ConfigurationSerializable,
-    RecordSerializable {
-    companion object {
+    GameSerializable {
+    companion object : GameDeSerializable {
         const val SIZE = 15
         var vectors = arrayOf<IntArray>(intArrayOf(1, 0), intArrayOf(0, 1), intArrayOf(1, 1), intArrayOf(1, -1), intArrayOf(-1, 0), intArrayOf(0, -1), intArrayOf(-1, -1), intArrayOf(-1, 1))
 
-        fun deserialize(gameInstance: Game, args: Map<String?, Any?>): Gomoku {
+        override fun deserialize(gameInstance: Game, args: Map<String, Any?>): Gomoku {
             return Gomoku(
                 gameInstance,
                 args["location"] as Location,

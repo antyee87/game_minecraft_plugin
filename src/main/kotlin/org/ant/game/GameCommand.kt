@@ -9,6 +9,12 @@ import com.mojang.brigadier.tree.CommandNode
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
 import net.minecraft.server.dedicated.DedicatedServer
+import org.ant.game.gameimpl.Chess
+import org.ant.game.gameimpl.ConnectFour
+import org.ant.game.gameimpl.Gomoku
+import org.ant.game.gameimpl.LightsOut
+import org.ant.game.gameimpl.Reversi
+import org.ant.game.gameimpl.ScoreFour
 import org.bukkit.Bukkit
 import org.bukkit.craftbukkit.CraftServer
 import java.util.concurrent.CompletableFuture
@@ -18,9 +24,9 @@ class GameCommand(private val instance: Game) {
     val commands: Commands = nmsServer.commands
     val dispatcher: CommandDispatcher<CommandSourceStack> = commands.dispatcher
 
-    lateinit var registeredCommands: List<CommandNode<CommandSourceStack>>
+    val registeredCommands: List<CommandNode<CommandSourceStack>>
 
-    fun register() {
+    init {
         val antGameCommand = Commands.literal("antgame")
             .then(
                 Commands.literal("game_operate")
@@ -33,7 +39,7 @@ class GameCommand(private val instance: Game) {
                                         Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
-                                                    .executes { ctx -> Execute(instance).setBoard(ctx, "chess") }
+                                                    .executes { ctx -> Execute(instance).setBoard(ctx, Chess) }
                                             )
                                     )
                                     .then(
@@ -41,7 +47,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> chessSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "chess") }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, Chess) }
                                             )
                                     )
                                     .then(
@@ -49,7 +55,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> chessSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "chess") }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, Chess) }
                                             )
                                     )
                             )
@@ -62,7 +68,7 @@ class GameCommand(private val instance: Game) {
                                         Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
-                                                    .executes { ctx -> Execute(instance).setBoard(ctx, "gomoku") }
+                                                    .executes { ctx -> Execute(instance).setBoard(ctx, Gomoku) }
                                             )
                                     )
                                     .then(
@@ -70,7 +76,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> gomokuSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "gomoku") }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, Gomoku) }
                                             )
                                     )
                                     .then(
@@ -78,7 +84,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> gomokuSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "gomoku") }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, Gomoku) }
                                             )
                                     )
                             )
@@ -92,7 +98,7 @@ class GameCommand(private val instance: Game) {
                                                     .then(
                                                         Commands.argument("align", StringArgumentType.word())
                                                             .suggests { _, builder -> alignSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).setDisplay(ctx, "gomoku") }
+                                                            .executes { ctx -> Execute(instance).setDisplay(ctx, Gomoku) }
                                                     )
                                             )
                                     )
@@ -101,7 +107,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> gomokuSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).removeDisplay(ctx, "gomoku") }
+                                                    .executes { ctx -> Execute(instance).removeDisplay(ctx, Gomoku) }
                                             )
                                     )
                             )
@@ -114,7 +120,7 @@ class GameCommand(private val instance: Game) {
                                         Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
-                                                    .executes { ctx -> Execute(instance).setBoard(ctx, "reversi") }
+                                                    .executes { ctx -> Execute(instance).setBoard(ctx, Reversi) }
                                             )
                                     )
                                     .then(
@@ -122,7 +128,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> reversiSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "reversi") }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, Reversi) }
                                             )
                                     )
                                     .then(
@@ -130,7 +136,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> reversiSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "reversi") }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, Reversi) }
                                             )
                                     )
                             )
@@ -144,7 +150,7 @@ class GameCommand(private val instance: Game) {
                                                     .then(
                                                         Commands.argument("align", StringArgumentType.word())
                                                             .suggests { _, builder -> alignSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).setDisplay(ctx, "reversi") }
+                                                            .executes { ctx -> Execute(instance).setDisplay(ctx, Reversi) }
                                                     )
                                             )
                                     )
@@ -153,7 +159,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> reversiSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).removeDisplay(ctx, "reversi") }
+                                                    .executes { ctx -> Execute(instance).removeDisplay(ctx, Reversi) }
                                             )
                                     )
                             )
@@ -168,7 +174,7 @@ class GameCommand(private val instance: Game) {
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .then(
                                                         Commands.argument("size", IntegerArgumentType.integer())
-                                                            .executes { ctx -> Execute(instance).setBoard(ctx, "lights_out") }
+                                                            .executes { ctx -> Execute(instance).setBoard(ctx, LightsOut) }
                                                     )
                                             )
                                     )
@@ -177,7 +183,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> lightsOutSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "lights_out") }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, LightsOut) }
                                             )
                                     )
                                     .then(
@@ -185,7 +191,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> lightsOutSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "lights_out") }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, LightsOut) }
                                             )
                                     )
                             )
@@ -199,7 +205,7 @@ class GameCommand(private val instance: Game) {
                                                     .then(
                                                         Commands.argument("align", StringArgumentType.word())
                                                             .suggests { _, builder -> alignSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).setDisplay(ctx, "lights_out") }
+                                                            .executes { ctx -> Execute(instance).setDisplay(ctx, LightsOut) }
                                                     )
                                             )
                                     )
@@ -208,7 +214,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> lightsOutSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).removeDisplay(ctx, "lights_out") }
+                                                    .executes { ctx -> Execute(instance).removeDisplay(ctx, LightsOut) }
                                             )
                                     )
                             )
@@ -224,7 +230,7 @@ class GameCommand(private val instance: Game) {
                                                     .then(
                                                         Commands.argument("align", StringArgumentType.word())
                                                             .suggests { _, builder -> alignSuggestions(builder) }
-                                                            .executes { ctx -> Execute(instance).setBoard(ctx, "connect_four") }
+                                                            .executes { ctx -> Execute(instance).setBoard(ctx, ConnectFour) }
                                                     )
                                             )
                                     )
@@ -233,7 +239,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> connectFourSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "connect_four") }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, ConnectFour) }
                                             )
                                     )
                                     .then(
@@ -241,7 +247,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> connectFourSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "connect_four") }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, ConnectFour) }
                                             )
                                     )
                             )
@@ -254,7 +260,7 @@ class GameCommand(private val instance: Game) {
                                         Commands.literal("setup")
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
-                                                    .executes { ctx -> Execute(instance).setBoard(ctx, "score_four") }
+                                                    .executes { ctx -> Execute(instance).setBoard(ctx, ScoreFour) }
                                             )
                                     )
                                     .then(
@@ -262,7 +268,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> scoreFourSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, "score_four") }
+                                                    .executes { ctx -> Execute(instance).resetBoard(ctx, ScoreFour) }
                                             )
                                     )
                                     .then(
@@ -270,7 +276,7 @@ class GameCommand(private val instance: Game) {
                                             .then(
                                                 Commands.argument("name", StringArgumentType.word())
                                                     .suggests { _, builder -> scoreFourSuggestions(builder) }
-                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, "score_four") }
+                                                    .executes { ctx -> Execute(instance).removeBoard(ctx, ScoreFour) }
                                             )
                                     )
                             )
@@ -323,10 +329,8 @@ class GameCommand(private val instance: Game) {
     }
 
     fun unregister() {
-        if (::registeredCommands.isInitialized) {
-            registeredCommands.forEach {
-                dispatcher.root.removeCommand(it.name)
-            }
+        registeredCommands.forEach {
+            dispatcher.root.removeCommand(it.name)
         }
     }
 }

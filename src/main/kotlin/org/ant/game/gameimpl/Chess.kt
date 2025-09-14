@@ -5,20 +5,22 @@ import com.destroystokyo.paper.profile.ProfileProperty
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.ant.game.BoardGame
+import org.ant.game.Game
+import org.ant.game.GameDeSerializable
+import org.ant.game.GameSerializable
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.block.Skull
-import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.entity.Player
 import java.util.UUID
 import kotlin.math.abs
 
 class Chess(location: Location) :
     BoardGame(location, null, null, 8),
-    ConfigurationSerializable {
-    companion object {
+    GameSerializable {
+    companion object : GameDeSerializable {
         const val SIZE = 8
 
         fun profile(piece: Int): PlayerProfile {
@@ -42,7 +44,7 @@ class Chess(location: Location) :
             return profile
         }
 
-        fun deserialize(args: MutableMap<String, Any?>): Chess {
+        override fun deserialize(gameInstance: Game, args: Map<String, Any?>): Chess {
             return Chess(
                 args["location"] as Location
             )
@@ -64,6 +66,15 @@ class Chess(location: Location) :
         val data: MutableMap<String, Any?> = HashMap()
         data["location"] = this.location
         return data
+    }
+
+    override fun deserializeRecord(data: Map<String, Any?>) {
+        // TODO
+    }
+
+    override fun serializeRecord(): MutableMap<String, Any?> {
+        // TODO
+        return hashMapOf()
     }
 
     init {

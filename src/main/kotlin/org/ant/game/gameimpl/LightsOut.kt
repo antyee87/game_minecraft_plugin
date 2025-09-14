@@ -1,23 +1,23 @@
 package org.ant.game.gameimpl
 
 import org.ant.game.BoardGame
-import org.ant.game.RecordSerializable
+import org.ant.game.Game
+import org.ant.game.GameDeSerializable
+import org.ant.game.GameSerializable
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.block.data.Lightable
 import org.bukkit.block.data.type.CopperBulb
-import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.entity.Player
 import kotlin.math.roundToInt
 
 class LightsOut(location: Location, size: Int, displayLocation: Location?, displayAlign: String?) :
     BoardGame(location, displayLocation, displayAlign, size),
-    ConfigurationSerializable,
-    RecordSerializable {
-    companion object {
+    GameSerializable {
+    companion object : GameDeSerializable {
         var vectors = arrayOf<IntArray>(intArrayOf(0, 0), intArrayOf(1, 0), intArrayOf(0, 1), intArrayOf(-1, 0), intArrayOf(0, -1))
 
-        fun deserialize(args: Map<String, Any?>): LightsOut {
+        override fun deserialize(gameInstance: Game, args: Map<String, Any?>): LightsOut {
             return LightsOut(
                 args["location"] as Location,
                 args["size"] as Int,
