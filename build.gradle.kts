@@ -62,6 +62,14 @@ tasks {
         args("src/**/*.kt", "**/*.kts", "!**/build/**")
     }
 
+    register("ktlintFormat", JavaExec::class) {
+        group = "formatting"
+        description = "Fix Kotlin code style deviations."
+        classpath = ktlint
+        mainClass = "com.pinterest.ktlint.Main"
+        args("-F", "src/**/*.kt", "**/*.kts", "!**/build/**")
+    }
+
     compileKotlin {
         dependsOn(ktlintCheck)
     }
