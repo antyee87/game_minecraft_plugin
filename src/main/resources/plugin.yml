@@ -1,19 +1,13 @@
 name: AntGame
 version: "1.1"
-main: org.ant.game.Game
+main: org.ant.game.AntGamePlugin
 api-version: "1.21.8"
 authors: [ Antonio111 ]
 description: Ant development
-dependencies:
-  server:
-    MCKotlin-Paper:
-      required: true
+
+depend: [MCKotlin-Paper]
 
 permissions:
   antgame.command:
-    game_operate:
-      description: 允許玩家使用 /antgame game_operate 指令
-      default: op
-    save_config:
-      description: 允許玩家使用 /antgame save_config 指令
+      description: 允許玩家使用 /antgame 指令
       default: op

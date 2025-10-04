@@ -2,118 +2,130 @@ package org.ant.game.gameimpl
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import org.ant.game.Game
-import org.ant.game.GameDeSerializable
-import org.ant.game.GameSerializable
-import org.ant.game.TwoColorBoardGame
+import org.ant.game.AntGamePlugin
+import org.ant.game.gameimpl.gameframe.GameConstants
+import org.ant.game.gameimpl.gameframe.GameDeSerializable
+import org.ant.game.gameimpl.gameframe.GameSerializable
+import org.ant.game.gameimpl.gameframe.GameState
+import org.ant.game.gameimpl.gameframe.Method
+import org.ant.game.gameimpl.gameframe.Pos
+import org.ant.game.gameimpl.gameframe.RecordSerializable
+import org.ant.game.gameimpl.gameframe.TwoColorBoardGame
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Sound
 import org.bukkit.entity.Player
+import org.bukkit.util.Vector
+import kotlin.String
 
-class Gomoku(gameInstance: Game, location: Location, displayLocation: Location?, displayAlign: String?) :
-    TwoColorBoardGame(gameInstance, location, displayLocation, displayAlign, SIZE),
-    GameSerializable {
+class Gomoku(pluginInstance: AntGamePlugin) :
+    TwoColorBoardGame(pluginInstance, SIZE),
+    GameSerializable,
+    RecordSerializable {
     companion object : GameDeSerializable {
         const val SIZE = 15
-        var vectors = arrayOf<IntArray>(intArrayOf(1, 0), intArrayOf(0, 1), intArrayOf(1, 1), intArrayOf(1, -1), intArrayOf(-1, 0), intArrayOf(0, -1), intArrayOf(-1, -1), intArrayOf(-1, 1))
 
-        override fun deserialize(gameInstance: Game, args: Map<String, Any?>): Gomoku {
-            return Gomoku(
-                gameInstance,
-                args["location"] as Location,
-                args["display_location"] as Location?,
-                args["display_align"] as String?
-            )
+        override fun deserialize(pluginInstance: AntGamePlugin, args: Map<String, Any?>): Gomoku {
+            val gomoku = Gomoku(pluginInstance)
+
+            @Suppress("UNCHECKED_CAST")
+            val boards = args["boards"] as Map<String, Map<String, Any?>>
+            for ((key, value) in boards) {
+                gomoku.setBoard(
+                    value["origin"] as Location,
+                    value["xAxis"] as Vector,
+                    value["yAxis"] as Vector,
+                    key
+                )
+            }
+            return gomoku
         }
     }
 
-    var board: Array<IntArray>? = null
-    var selected: IntArray? = null
-    var player: Int = 0
-    var end: Boolean = false
-    lateinit var minecraftPlayers: Array<Player?>
+    var selected: Pos? = null
 
     init {
-        this.gameInstance = gameInstance
-        this.location = location
-        this.center = location.clone()
-        this.center.add(SIZE.toDouble() / 2, 0.0, SIZE.toDouble() / 2)
-        this.displayLocation = displayLocation
-        this.displayAlign = displayAlign
-        reset(board)
+        reset(null)
     }
 
     override fun serialize(): MutableMap<String, Any?> {
-        val data = HashMap<String, Any?>()
-        data["location"] = this.location
-        data["display_location"] = this.displayLocation
-        data["display_align"] = this.displayAlign
+        val data = hashMapOf<String, Any?>()
+        for ((name, board) in boards) {
+            data["boards.$name"] = mapOf<String, Any?>(
+                "origin" to board.origin,
+                "xAxis" to board.xAxis,
+                "yAxis" to board.yAxis
+            )
+        }
         return data
     }
 
     override fun deserializeRecord(data: Map<String, Any?>) {
         @Suppress("UNCHECKED_CAST")
-        val boardPreset = Method.deserialize2dBoard(data["board"] as List<String>?)
-        reset(boardPreset)
+        reset(
+            GameState(
+                Method.deserialize2dBoard(data["board"] as List<String>),
+                data["player"] as Int,
+                data["end"] as Boolean
+            )
+        )
     }
 
     override fun serializeRecord(): MutableMap<String, Any?> {
         val data = HashMap<String, Any?>()
-        if (!end) {
-            data["board"] = Method.serialize2dBoard(this.board)
-        }
+        data["board"] = Method.serialize2dBoard(this.boardState)
+        data["player"] = player
+        data["end"] = end
         return data
     }
 
-    override fun setDisplay(location: Location?, displayAlign: String?) {
-        super.setDisplay(location, displayAlign)
-        this.displayLocation = location
-        this.displayAlign = displayAlign
-    }
-
-    override fun removeDisplay() {
-        super.removeDisplay()
-        this.displayLocation = null
-        this.displayAlign = null
-    }
-
-    override fun remove() {
-        if (displaySelectedTask != null) displaySelectedTask!!.cancel()
-        super.remove()
-    }
-
-    fun reset(boardPreset: Array<IntArray>?) {
-        board = boardPreset ?: Array(SIZE) { IntArray(SIZE) }
+    @Suppress("UNCHECKED_CAST")
+    override fun reset(gamePreset: GameState?) {
+        if (gamePreset != null) {
+            boardState = gamePreset.boardState as Array<IntArray>
+            player = gamePreset.player
+            end = gamePreset.end
+        } else {
+            boardState = Array(SIZE) { IntArray(SIZE) }
+            player = 1
+            end = false
+        }
         selected = null
-        if (displaySelectedTask != null) displaySelectedTask!!.cancel()
-        player = 1
-        end = false
-        minecraftPlayers = arrayOfNulls(2)
-        display(board!!)
+        displaySelectedTask?.cancel()
+
+        uuidPair.clear()
+        display()
     }
 
-    override fun move(x: Int, z: Int, minecraftPlayer: Player): Boolean {
-        if (!end && board!![x][z] == 0) {
-            if (minecraftPlayers[player - 1] == null || minecraftPlayers[player - 1] == minecraftPlayer) {
-                if (minecraftPlayers[player - 1] == null) minecraftPlayers[player - 1] = minecraftPlayer
-
-                if (selected == null || selected!![0] != x || selected!![1] != z) {
-                    if (displaySelectedTask != null) displaySelectedTask!!.cancel()
-                    if (selected != null) displaySingle(selected!![0], selected!![1], 0)
-                    selected = intArrayOf(x, z)
-                    select(x, z, player, 0)
+    override fun move(x: Int, y: Int, z: Int, movePlayer: Player): Boolean {
+        if (!end && boardState[x][y] == 0) {
+            val playerUUID = movePlayer.uniqueId
+            if (uuidPair.getPlayerUUID(player) == playerUUID || uuidPair.putPlayerUUID(playerUUID)) {
+                displaySelectedTask?.cancel()
+                if (selected == null || selected!!.x != x || selected!!.y != y) {
+                    if (selected != null) displaySingle(selected!!.x, selected!!.y, 0)
+                    selected = Pos(x, y)
+                    select(x, y, player, 0)
                 } else {
-                    displaySelectedTask!!.cancel()
-                    board!![x][z] = player
+                    boardState[x][y] = player
+                    displaySingle(selected!!.x, selected!!.y, player)
                     selected = null
-                    if (isWin(x, z)) {
+                    if (isWin(x, y)) {
                         val component: Component?
                         if (player == 1) {
                             component = Component.text("黑棋勝利").color(NamedTextColor.GRAY)
-                            firework(center, true)
+                            for (board in boards.values) {
+                                if (board.yAxis.y == 0.0) {
+                                    Method.blackWhiteFirework(board.center.clone().add(0.0, 1.0, 0.0), true)
+                                }
+                            }
                         } else {
                             component = Component.text("白棋勝利").color(NamedTextColor.WHITE)
-                            firework(center, false)
+                            for (board in boards.values) {
+                                if (board.yAxis.y == 0.0) {
+                                    Method.blackWhiteFirework(board.center.clone().add(0.0, 1.0, 0.0), false)
+                                }
+                            }
                         }
                         broadcast(component)
                         end = true
@@ -122,7 +134,6 @@ class Gomoku(gameInstance: Game, location: Location, displayLocation: Location?,
                         broadcast("平手")
                         end = true
                     }
-                    display(board!!)
                     player = if (player == 1) {
                         2
                     } else {
@@ -131,10 +142,9 @@ class Gomoku(gameInstance: Game, location: Location, displayLocation: Location?,
                 }
                 return true
             } else {
-                val component = Component.text("已被玩家 " + minecraftPlayers[player - 1]!!.name + " 綁定").color(NamedTextColor.RED)
-                minecraftPlayer.sendMessage(component)
-                minecraftPlayer.playSound(minecraftPlayer, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
-                return false
+                val component = Component.text("已被玩家 " + Bukkit.getPlayer(uuidPair.getPlayerUUID(player)!!)?.name + " 綁定").color(NamedTextColor.RED)
+                movePlayer.sendMessage(component)
+                movePlayer.playSound(movePlayer, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
             }
         }
         return false
@@ -147,10 +157,10 @@ class Gomoku(gameInstance: Game, location: Location, displayLocation: Location?,
             var checkY = y
             @Suppress("UNUSED_PARAMETER")
             for (j in 1..4) {
-                checkX += vectors[i][0]
-                checkY += vectors[i][1]
+                checkX += GameConstants.eightDirection[i][0]
+                checkY += GameConstants.eightDirection[i][1]
                 if (isInside(checkX, checkY)) {
-                    if (board!![checkX][checkY] == player) {
+                    if (boardState[checkX][checkY] == player) {
                         counter[i % 4]++
                     } else {
                         break
@@ -167,7 +177,7 @@ class Gomoku(gameInstance: Game, location: Location, displayLocation: Location?,
     private fun isTie(): Boolean {
         for (i in 0..<SIZE) {
             for (j in 0..<SIZE) {
-                if (board!![i][j] == 0) {
+                if (boardState[i][j] == 0) {
                     return false
                 }
             }

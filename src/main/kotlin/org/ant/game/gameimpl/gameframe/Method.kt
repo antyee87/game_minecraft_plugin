@@ -1,19 +1,18 @@
-package org.ant.game.gameimpl
+package org.ant.game.gameimpl.gameframe
 
 import net.kyori.adventure.text.Component
+import org.ant.game.gameimpl.gameframe.GameConstants.CardinalDirection
+import org.ant.game.gameimpl.gameframe.GameConstants.Orientation
 import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.FireworkEffect
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Firework
-import kotlin.text.map
+import org.bukkit.util.Vector
 
 object Method {
-    fun isInRange(a: Int, min: Int, max: Int): Boolean {
-        return (a in min..max)
-    }
-
     fun firework(location: Location, isFirst: Boolean, firstColor: Color, secondColor: Color) {
         val firework = location.world.spawn(location.clone().add(0.0, 1.0, 0.0), Firework::class.java)
         val meta = firework.fireworkMeta
@@ -37,6 +36,10 @@ object Method {
         // 白 summon firework_rocket ~ ~1 ~ {LifeTime:20,FireworksItem:{id:"minecraft:firework_rocket",count:1,components:{"minecraft:fireworks":{explosions:[{shape:"large_ball",has_twinkle:true,has_trail:true,colors:[I;11250603,15790320],fade_colors:[I;14602026]}]}}}}
     }
 
+    fun blackWhiteFirework(location: Location, isBlack: Boolean) {
+        firework(location, isBlack, Color.BLACK, Color.WHITE)
+    }
+
     fun yellowRedFirework(location: Location, isYellow: Boolean) {
         firework(location, isYellow, Color.YELLOW, Color.RED)
     }
@@ -51,6 +54,26 @@ object Method {
         return Material.AIR
     }
 
+    /**
+     * getAxis for board by cardinal directions and orientation
+     * xAxis equal to the direction
+     * if the orientation is HORIZONTAL, yAxis will be the xAxis rotated 90 degrees
+     */
+    fun getAxis(direction: CardinalDirection, orientation: Orientation): Pair<Vector, Vector> {
+        val xAxis = when (direction) {
+            CardinalDirection.EAST -> Vector(1.0, 0.0, 0.0)
+            CardinalDirection.SOUTH -> Vector(0.0, 0.0, 1.0)
+            CardinalDirection.WEST -> Vector(-1.0, 0.0, 0.0)
+            CardinalDirection.NORTH -> Vector(0.0, 0.0, -1.0)
+        }
+
+        val yAxis = when (orientation) {
+            Orientation.VERTICAL -> Vector(0.0, 1.0, 0.0)
+            Orientation.HORIZONTAL -> Vector(-xAxis.z, 0.0, xAxis.x)
+        }
+        return Pair(xAxis, yAxis)
+    }
+
     fun broadcast(message: Component, location: Location, size: Int) {
         Bukkit.getOnlinePlayers().forEach { player ->
             if (location.distance(player!!.location) <= size.toDouble() + 5) {
@@ -61,6 +84,19 @@ object Method {
 
     fun broadcast(message: String, location: Location, size: Int) {
         broadcast(Component.text(message), location, size)
+    }
+
+    fun ConfigurationSection.toMapRecursively(): Map<String, Any?> {
+        val result = mutableMapOf<String, Any?>()
+        for (key in getKeys(false)) {
+            val value = get(key)
+            result[key] = if (value is ConfigurationSection) {
+                value.toMapRecursively()
+            } else {
+                value
+            }
+        }
+        return result
     }
 
     fun serialize1dBoard(board: IntArray?): String? {

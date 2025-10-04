@@ -1,6 +1,7 @@
 package org.ant.game
 
-import org.ant.game.gameimpl.Method
+import org.ant.game.gameimpl.gameframe.BasicValue
+import org.ant.game.gameimpl.gameframe.BoardGame
 import org.bukkit.GameMode
 import org.bukkit.Sound
 import org.bukkit.block.Block
@@ -12,15 +13,10 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.metadata.FixedMetadataValue
+import org.bukkit.util.Vector
 import java.util.UUID
 
-class OperateListener(private val instance: Game) : Listener {
-    private val chessGames = instance.chessGames.values
-    private val gomokuGames = instance.gomokuGames.values
-    private val reversiGames = instance.reversiGames.values
-    private val lightsOutGames = instance.lightsOutGames.values
-    private val connectFourGames = instance.connectFourGames.values
-    private val scoreFourGames = instance.scoreFourGames.values
+class OperateListener(private val instance: AntGamePlugin) : Listener {
 
     private val cooldowns = HashMap<UUID, Long>()
 
@@ -32,90 +28,93 @@ class OperateListener(private val instance: Game) : Listener {
         val player = event.player
         val playerId = player.uniqueId
         val currentTime = System.currentTimeMillis()
+
         if (!cooldowns.containsKey(playerId) || currentTime - cooldowns[playerId]!! > 100) {
             cooldowns[playerId] = currentTime
             if (event.action == Action.RIGHT_CLICK_BLOCK && event.hand == EquipmentSlot.HAND) {
                 if (block == null) {
                     return
                 } else {
-                    val point = block.location
+                    val location = block.location
                     found = false
-
-                    chessGames.forEach { game ->
-                        val board = game.location
-                        val x = point.blockX - board.blockX
-                        val y = point.blockY - board.blockY
-                        val z = point.blockZ - board.blockZ
-                        if (Method.isInRange(y, 0, 1) && game.promotable == null) {
-                            if (game.isInside(x, z)) {
-                                if (game.move(x, z, y, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
-                                found = true
+                    for (gameName in GamesManager.games.keys) {
+                        val gameInstances = GamesManager.games[gameName] ?: continue
+                        when (gameName) {
+                            "chess" -> {
+                                @Suppress("UNCHECKED_CAST")
+                                (gameInstances.values as Collection<BoardGame>).forEach { game ->
+                                    for (board in game.boards.values) {
+                                        val vector = location.block.location.toVector().subtract(board.origin.toVector())
+                                        val dx = vector.dot(board.xAxis).toInt()
+                                        val dy = vector.dot(board.yAxis).toInt()
+                                        val dz = vector.dot(Vector(0.0, 1.0, 0.0)).toInt()
+                                        if (dz in 0..5 && game.isInside(dx, dy)) {
+                                            if (game.move(dx, dy, dz, player)) {
+                                                block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
+                                            }
+                                            return
+                                        }
+                                    }
+                                }
                             }
-                        } else if (Method.isInRange(y, 2, 5) && game.promotable != null) {
-                            if (game.isInside(x, z)) {
-                                game.promote(y, player)
-                                block.world.playSound(block.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f)
-                                return@forEach
+                            "gomoku", "reversi", "lightsOut", "connectFour" -> {
+                                @Suppress("UNCHECKED_CAST")
+                                found = simpleGameClick(gameInstances.values as Collection<BoardGame>, block, player)
+                                if (found) return
                             }
-                        }
-                    }
-                    if (found) return
-
-                    simpleGameClick(gomokuGames, block, player)
-                    if (found) return
-
-                    simpleGameClick(reversiGames, block, player)
-                    if (found) return
-
-                    simpleGameClick(lightsOutGames, block, player)
-                    if (found) return
-
-                    connectFourGames.forEach { game ->
-                        val board = game.location
-                        val x = point.blockX - board.blockX
-                        val y = point.blockY - board.blockY
-                        val z = point.blockZ - board.blockZ
-                        if (y <= 6) {
-                            if (game.align == "x" && point.blockZ == board.blockZ && game.isInside(0, x)) {
-                                if (game.move(x, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
-                                found = true
-                            } else if (game.align == "z" && point.blockX == board.blockX && game.isInside(0, z)) {
-                                if (game.move(z, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
-                                found = true
-                            }
-                        }
-                    }
-                    if (found) return
-
-                    scoreFourGames.forEach { game ->
-                        val board = game.location
-                        val x = (point.blockX - board.blockX) / 2
-                        val y = point.blockY - board.blockY
-                        val z = (point.blockZ - board.blockZ) / 2
-                        if (Method.isInRange(y, 0, 4)) {
-                            if (game.isInside(x, z, 0)) {
-                                if (game.move(x, z, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
-                                found = true
+                            "scoreFour" -> {
+                                @Suppress("UNCHECKED_CAST")
+                                (gameInstances.values as Collection<BoardGame>).forEach { game ->
+                                    for (board in game.boards.values) {
+                                        if (location.world != board.origin.world) {
+                                            continue
+                                        }
+                                        val vector = location.block.location.toVector().subtract(board.origin.toVector())
+                                        var dx = vector.dot(board.xAxis).toInt()
+                                        var dy = vector.dot(board.yAxis).toInt()
+                                        if (dx % 2 == 0 && dy % 2 == 0) {
+                                            dx /= 2
+                                            dy /= 2
+                                        } else {
+                                            continue
+                                        }
+                                        val dz = vector.dot(Vector(0.0, 1.0, 0.0)).toInt()
+                                        if (dz in 0..4 && game.isInside(dx, dy)) {
+                                            if (game.move(dx, dy, 0, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
+                                            return
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-                    if (found) return
                 }
             }
         }
     }
 
-    private fun <T : BoardGame> simpleGameClick(games: Collection<T>, block: Block, player: Player) {
-        val point = block.location
+    /**
+     * If board is square, then the game can do move by this method.
+     * Calculate orthographic projection on xAxis, yAxis, zAxis(xAxis cross yAxis)
+     */
+    private fun <T : BoardGame> simpleGameClick(games: Collection<T>, block: Block, player: Player): Boolean {
+        val clickedPoint = block.location
         games.forEach { game ->
-            val board = game.location
-            val x = point.blockX - board.blockX
-            val z = point.blockZ - board.blockZ
-            if (point.blockY == board.blockY && game.isInside(x, z)) {
-                if (game.move(x, z, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
-                found = true
+            for (board in game.boards.values) {
+                if (clickedPoint.world != board.origin.world) {
+                    continue
+                }
+                val vector = clickedPoint.block.location.toVector().subtract(board.origin.toVector())
+                val dx = vector.dot(board.xAxis).toInt()
+                val dy = vector.dot(board.yAxis).toInt()
+                val dz = vector.dot(board.xAxis.clone().crossProduct(board.yAxis)).toInt()
+                if (dz == 0 && game.isInside(dx, dy)) {
+                    if (game.move(dx, dy, 0, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
+                    return true
+                }
             }
         }
+        return false
     }
 
     @EventHandler
@@ -123,7 +122,6 @@ class OperateListener(private val instance: Game) : Listener {
         if (event.hasChangedPosition()) {
             val player = event.player
             if (player.gameMode == GameMode.ADVENTURE || player.gameMode == GameMode.SURVIVAL) {
-                setFly(scoreFourGames, player)
             }
         }
     }

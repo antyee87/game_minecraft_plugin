@@ -2,176 +2,172 @@ package org.ant.game.gameimpl
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import org.ant.game.Game
-import org.ant.game.GameDeSerializable
-import org.ant.game.GameSerializable
-import org.ant.game.TwoColorBoardGame
-import org.ant.game.gameimpl.Method.isInRange
+import org.ant.game.AntGamePlugin
+import org.ant.game.gameimpl.gameframe.GameConstants
+import org.ant.game.gameimpl.gameframe.GameDeSerializable
+import org.ant.game.gameimpl.gameframe.GameSerializable
+import org.ant.game.gameimpl.gameframe.GameState
+import org.ant.game.gameimpl.gameframe.Method
+import org.ant.game.gameimpl.gameframe.Pos
+import org.ant.game.gameimpl.gameframe.RecordSerializable
+import org.ant.game.gameimpl.gameframe.TwoColorBoardGame
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Sound
 import org.bukkit.entity.Player
+import org.bukkit.util.Vector
 
-class Reversi(gameInstance: Game, location: Location, displayLocation: Location?, displayAlign: String?) :
-    TwoColorBoardGame(gameInstance, location, displayLocation, displayAlign, SIZE),
-    GameSerializable {
+class Reversi(pluginInstance: AntGamePlugin) :
+    TwoColorBoardGame(pluginInstance, SIZE),
+    GameSerializable,
+    RecordSerializable {
     companion object : GameDeSerializable {
         const val SIZE = 8
-        var vectors = arrayOf<IntArray?>(intArrayOf(1, 0), intArrayOf(0, 1), intArrayOf(1, 1), intArrayOf(1, -1), intArrayOf(-1, 0), intArrayOf(0, -1), intArrayOf(-1, -1), intArrayOf(-1, 1))
 
-        override fun deserialize(gameInstance: Game, args: Map<String, Any?>): Reversi {
-            return Reversi(
-                gameInstance,
-                args["location"] as Location,
-                args["display_location"] as Location?,
-                args["display_align"] as String?
-            )
+        override fun deserialize(pluginInstance: AntGamePlugin, args: Map<String, Any?>): Reversi {
+            val reversi = Reversi(pluginInstance)
+
+            @Suppress("UNCHECKED_CAST")
+            val boards = args["boards"] as Map<String, Map<String, Any?>>
+            for ((key, value) in boards) {
+                reversi.setBoard(
+                    value["origin"] as Location,
+                    value["xAxis"] as Vector,
+                    value["yAxis"] as Vector,
+                    key
+                )
+            }
+            return reversi
         }
     }
 
-    var board: Array<IntArray>? = null
-    var canFlip: Array<Array<BooleanArray?>?> = Array(8) { Array(SIZE) { BooleanArray(SIZE) } }
-    var selected: IntArray? = null
-    var player: Int = 0
-    var end: Boolean = false
-    var moveable: Boolean = false
-    lateinit var minecraftPlayers: Array<Player?>
+    var canFlip: Array<Array<BooleanArray>> = Array(8) { Array(SIZE) { BooleanArray(SIZE) } }
+    var selected: Pos? = null
 
     init {
-        this.gameInstance = gameInstance
-        this.location = location
-        this.center = location.clone()
-        this.center.add(SIZE.toDouble() / 2, 0.0, SIZE.toDouble() / 2)
-        this.displayLocation = displayLocation
-        this.displayAlign = displayAlign
-        reset(board)
+        reset(null)
     }
 
     override fun serialize(): MutableMap<String, Any?> {
-        val data = HashMap<String, Any?>()
-        data["location"] = this.location
-        data["display_location"] = this.displayLocation
-        data["display_align"] = this.displayAlign
+        val data = hashMapOf<String, Any?>()
+        for ((name, board) in boards) {
+            data["boards.$name"] = mapOf<String, Any?>(
+                "origin" to board.origin,
+                "xAxis" to board.xAxis,
+                "yAxis" to board.yAxis
+            )
+        }
         return data
     }
 
     override fun deserializeRecord(data: Map<String, Any?>) {
         @Suppress("UNCHECKED_CAST")
-        val boardPreset = Method.deserialize2dBoard(data["board"] as List<String>?)
-        reset(boardPreset)
+        reset(
+            GameState(
+                Method.deserialize2dBoard(data["board"] as List<String>?),
+                data["player"] as Int,
+                data["end"] as Boolean
+            )
+        )
     }
 
     override fun serializeRecord(): MutableMap<String, Any?> {
         val data = HashMap<String, Any?>()
-        if (!end) {
-            data["board"] = Method.serialize2dBoard(this.board)
-        }
+        data["board"] = Method.serialize2dBoard(this.boardState)
+        data["player"] = player
+        data["end"] = end
         return data
     }
 
-    override fun setDisplay(location: Location?, displayAlign: String?) {
-        super.setDisplay(location, displayAlign)
-        this.displayLocation = location
-        this.displayAlign = displayAlign
-    }
-
-    override fun removeDisplay() {
-        super.removeDisplay()
-        this.displayLocation = null
-        this.displayAlign = null
-    }
-
-    fun reset(boardPreset: Array<IntArray>?) {
-        if (boardPreset != null) {
-            board = boardPreset
+    @Suppress("UNCHECKED_CAST")
+    override fun reset(gamePreset: GameState?) {
+        if (gamePreset != null) {
+            boardState = gamePreset.boardState as Array<IntArray>
+            player = gamePreset.player
+            end = gamePreset.end
         } else {
-            board = Array(SIZE) { IntArray(SIZE) }
-            board!![3][3] = 1
-            board!![4][4] = 1
-            board!![3][4] = 2
-            board!![4][3] = 2
+            boardState = Array(SIZE) { IntArray(SIZE) }
+            boardState[3][3] = 1
+            boardState[4][4] = 1
+            boardState[3][4] = 2
+            boardState[4][3] = 2
+
+            player = 1
+            end = false
         }
         selected = null
-        if (displaySelectedTask != null) displaySelectedTask!!.cancel()
-        player = 1
-        end = false
+        displaySelectedTask?.cancel()
+
         findCanMove()
-        minecraftPlayers = arrayOfNulls(2)
-        display(board!!)
+        uuidPair.clear()
+        display()
     }
 
-    override fun remove() {
-        if (displaySelectedTask != null) displaySelectedTask!!.cancel()
-        super.remove()
-    }
-
-    private fun findCanMove() {
-        moveable = false
+    private fun findCanMove(): Boolean {
+        var moveable = false
         for (x in 0..<SIZE) {
             for (y in 0..<SIZE) {
-                if (board!![x][y] == 3) board!![x][y] = 0
-                for (i in 0..7) canFlip[i]!![x]!![y] = false
+                if (boardState[x][y] == 3) boardState[x][y] = 0
+                for (i in 0..7) canFlip[i][x][y] = false
             }
         }
         for (x in 0..<SIZE) {
             for (y in 0..<SIZE) {
-                if (board!![x][y] == player) {
+                if (boardState[x][y] == player) {
                     for (i in 0..7) {
-                        var checkX = x
-                        var checkY = y
+                        var dx = GameConstants.eightDirection[i][0]
+                        var dy = GameConstants.eightDirection[i][1]
                         var hasOpponent = false
-                        checkX += vectors[i]!![0]
-                        checkY += vectors[i]!![1]
-                        while (isInside(checkX, checkY)) {
-                            if (board!![checkX][checkY] != player && isInRange(board!![checkX][checkY], 1, 2)) {
+                        while (isInside(x + dx, y + dy)) {
+                            if (boardState[x + dx][y + dy] in 1..2 && boardState[x + dx][y + dy] != player) {
                                 hasOpponent = true
                             } else {
                                 break
                             }
-                            checkX += vectors[i]!![0]
-                            checkY += vectors[i]!![1]
+                            dx += GameConstants.eightDirection[i][0]
+                            dy += GameConstants.eightDirection[i][1]
                         }
-                        if (hasOpponent && isInside(checkX, checkY) && !isInRange(board!![checkX][checkY], 1, 2)) {
-                            board!![checkX][checkY] = 3
-                            canFlip[i]!![checkX]!![checkY] = true
+                        if (hasOpponent && isInside(x + dx, y + dy) && boardState[x + dx][y + dy] !in 1..2) {
+                            boardState[x + dx][y + dy] = 3
+                            canFlip[i][x + dx][y + dy] = true
                             moveable = true
                         }
                     }
                 }
             }
         }
+        return moveable
     }
 
-    override fun move(x: Int, z: Int, minecraftPlayer: Player): Boolean {
+    override fun move(x: Int, y: Int, z: Int, movePlayer: Player): Boolean {
         if (!end) {
-            if (board!![x][z] == 3) {
-                if (minecraftPlayers[player - 1] == null || minecraftPlayers[player - 1] == minecraftPlayer) {
-                    if (minecraftPlayers[player - 1] == null) {
-                        minecraftPlayers[player - 1] = minecraftPlayer
-                    }
-                    if (selected == null || selected!![0] != x || selected!![1] != z) {
-                        if (displaySelectedTask != null) displaySelectedTask!!.cancel()
-                        if (selected != null) displaySingle(selected!![0], selected!![1], 3)
-                        selected = intArrayOf(x, z)
-                        select(x, z, player, 3)
+            if (boardState[x][y] == 3) {
+                val playerUUID = movePlayer.uniqueId
+                if (uuidPair.getPlayerUUID(player) == playerUUID || uuidPair.putPlayerUUID(playerUUID)) {
+                    displaySelectedTask?.cancel()
+                    if (selected == null || selected!!.x != x || selected!!.y != y) {
+                        if (selected != null) displaySingle(selected!!.x, selected!!.y, 3)
+                        selected = Pos(x, y)
+                        select(x, y, player, 3)
                     } else {
-                        displaySelectedTask!!.cancel()
-                        board!![x][z] = player
+                        boardState[x][y] = player
                         selected = null
                         for (i in 0..7) {
-                            var checkX = x
-                            var checkY = z
-                            checkX += vectors[i]!![0]
-                            checkY += vectors[i]!![1]
-                            while (canFlip[(i + 4) % 8]!![x]!![z] && isInside(checkX, checkY)) {
-                                if (board!![checkX][checkY] != player) {
-                                    board!![checkX][checkY] = player
+                            if (!canFlip[(i + 4) % 8][x][y]) continue
+                            var dx = GameConstants.eightDirection[i][0]
+                            var dy = GameConstants.eightDirection[i][1]
+                            while (isInside(x + dx, y + dy)) {
+                                if (boardState[x + dx][y + dy] != player) {
+                                    boardState[x + dx][y + dy] = player
                                 } else {
                                     break
                                 }
-                                checkX += vectors[i]!![0]
-                                checkY += vectors[i]!![1]
+                                dx += GameConstants.eightDirection[i][0]
+                                dy += GameConstants.eightDirection[i][1]
                             }
                         }
+
+                        var moveable = false
                         @Suppress("UNUSED_PARAMETER")
                         for (i in 0..1) {
                             player = if (player == 1) {
@@ -179,19 +175,19 @@ class Reversi(gameInstance: Game, location: Location, displayLocation: Location?
                             } else {
                                 1
                             }
-                            findCanMove()
+                            moveable = findCanMove()
                             if (moveable) break
                         }
-                        display(board!!)
+                        display()
 
                         if (!moveable) {
                             var blackPiece = 0
                             var whitePiece = 0
                             for (i in 0..<SIZE) {
                                 for (j in 0..<SIZE) {
-                                    if (board!![i][j] == 1) {
+                                    if (boardState[i][j] == 1) {
                                         blackPiece++
-                                    } else if (board!![i][j] == 2) {
+                                    } else if (boardState[i][j] == 2) {
                                         whitePiece++
                                     }
                                 }
@@ -199,10 +195,18 @@ class Reversi(gameInstance: Game, location: Location, displayLocation: Location?
                             var component: Component?
                             if (blackPiece > whitePiece) {
                                 component = Component.text("黑棋勝利").color(NamedTextColor.GRAY)
-                                firework(center, true)
+                                for (board in boards.values) {
+                                    if (board.yAxis.y == 0.0) {
+                                        Method.blackWhiteFirework(board.center.clone().add(0.0, 1.0, 0.0), true)
+                                    }
+                                }
                             } else if (whitePiece > blackPiece) {
                                 component = Component.text("白棋勝利").color(NamedTextColor.WHITE)
-                                firework(center, false)
+                                for (board in boards.values) {
+                                    if (board.yAxis.y == 0.0) {
+                                        Method.blackWhiteFirework(board.center.clone().add(0.0, 1.0, 0.0), false)
+                                    }
+                                }
                             } else {
                                 component = Component.text("平手")
                             }
@@ -216,9 +220,9 @@ class Reversi(gameInstance: Game, location: Location, displayLocation: Location?
                     }
                     return true
                 } else {
-                    val component = Component.text("已被玩家 " + minecraftPlayers[player - 1]!!.name + " 綁定").color(NamedTextColor.RED)
-                    minecraftPlayer.sendMessage(component)
-                    minecraftPlayer.playSound(minecraftPlayer, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
+                    val component = Component.text("已被玩家 " + Bukkit.getPlayer(uuidPair.getPlayerUUID(player)!!)?.name + " 綁定").color(NamedTextColor.RED)
+                    movePlayer.sendMessage(component)
+                    movePlayer.playSound(movePlayer, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
                     return false
                 }
             }

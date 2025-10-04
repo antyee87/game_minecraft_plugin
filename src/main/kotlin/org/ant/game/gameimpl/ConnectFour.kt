@@ -2,185 +2,182 @@ package org.ant.game.gameimpl
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import org.ant.game.Game
-import org.ant.game.GameDeSerializable
-import org.ant.game.GameSerializable
-import org.ant.game.gameimpl.Method.yellowRedFirework
-import org.ant.game.gameimpl.Method.yellowRedMaterial
+import org.ant.game.AntGamePlugin
+import org.ant.game.gameimpl.gameframe.BoardGame
+import org.ant.game.gameimpl.gameframe.GameConstants
+import org.ant.game.gameimpl.gameframe.GameDeSerializable
+import org.ant.game.gameimpl.gameframe.GameSerializable
+import org.ant.game.gameimpl.gameframe.GameState
+import org.ant.game.gameimpl.gameframe.Method
+import org.ant.game.gameimpl.gameframe.RecordSerializable
+import org.ant.game.gameimpl.gameframe.UUIDPair
 import org.bukkit.Bukkit
 import org.bukkit.Location
-import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.block.Block
+import org.bukkit.entity.Entity
+import org.bukkit.entity.FallingBlock
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
+import org.bukkit.util.Vector
 
-class ConnectFour(var gameInstance: Game, var location: Location, var align: String) : GameSerializable {
+class ConnectFour(val pluginInstance: AntGamePlugin) :
+    BoardGame(SIZE),
+    GameSerializable,
+    RecordSerializable {
     companion object : GameDeSerializable {
-        override fun deserialize(gameInstance: Game, args: Map<String, Any?>): ConnectFour {
-            return ConnectFour(
-                gameInstance,
-                args["location"] as Location,
-                args["align"] as String
-            )
+        const val SIZE = 7
+
+        override fun deserialize(pluginInstance: AntGamePlugin, args: Map<String, Any?>): ConnectFour {
+            val connectFour = ConnectFour(pluginInstance)
+
+            @Suppress("UNCHECKED_CAST")
+            val boards = args["boards"] as Map<String, Map<String, Any?>>
+            for ((key, value) in boards) {
+                connectFour.setBoard(
+                    value["origin"] as Location,
+                    value["xAxis"] as Vector,
+                    value["yAxis"] as Vector,
+                    key
+                )
+            }
+            return connectFour
         }
     }
-
-    var center: Location? = null
-
-    var board: Array<IntArray>? = null
-    var top: IntArray? = null
+    var boardState = Array(SIZE) { IntArray(SIZE) }
     var selected: Int = -1
     var displaySelectedTask: BukkitTask? = null
-    var player: Int = 0
+    val fallingBlocks = arrayListOf<Entity>()
+    var player: Int = 1
     var end: Boolean = false
-    lateinit var minecraftPlayers: Array<Player?>
+    val uuidPair = UUIDPair()
 
     var visible: Boolean = true
 
     init {
-        if (align == "x") {
-            this.center = location.clone().add(3.5, 3.0, 0.0)
-        } else if (align == "z") {
-            this.center = location.clone().add(0.0, 3.0, 3.5)
-        }
-        reset(board, top, false)
+        reset(null)
     }
 
     override fun serialize(): MutableMap<String, Any?> {
-        val data = HashMap<String, Any?>()
-        data["location"] = this.location
-        data["align"] = this.align
+        val data = hashMapOf<String, Any?>()
+        for ((name, board) in boards) {
+            data["boards.$name"] = mapOf<String, Any?>(
+                "origin" to board.origin,
+                "xAxis" to board.xAxis,
+                "yAxis" to board.yAxis
+            )
+        }
         return data
     }
 
     override fun deserializeRecord(data: Map<String, Any?>) {
         @Suppress("UNCHECKED_CAST")
-        val boardPreset = Method.deserialize2dBoard(data["board"] as List<String>?)
-        val topPreset = Method.deserialize1dBoard(data["top"] as String?)
-        reset(boardPreset, topPreset)
+        reset(
+            GameState(
+                Method.deserialize2dBoard(data["board"] as List<String>?),
+                data["player"] as Int,
+                data["end"] as Boolean
+            )
+        )
     }
 
     override fun serializeRecord(): MutableMap<String, Any?> {
         val data = HashMap<String, Any?>()
-        if (!end) {
-            data["board"] = Method.serialize2dBoard(this.board)
-            data["top"] = Method.serialize1dBoard(this.top)
-        }
+        data["board"] = Method.serialize2dBoard(boardState)
+        data["player"] = player
+        data["end"] = end
+
         return data
     }
 
-    fun reset(boardPreset: Array<IntArray>?, topPreset: IntArray?, resetDisplay: Boolean = true) {
-        val noPreset = boardPreset == null
-        board = boardPreset ?: Array(6) { IntArray(7) }
-        top = topPreset ?: IntArray(7)
-        selected = -1
-        if (displaySelectedTask != null) displaySelectedTask!!.cancel()
-        player = 1
-        minecraftPlayers = arrayOfNulls(2)
-        end = false
-        if (noPreset && resetDisplay) {
-            for (x in 0..6) {
-                for (y in 0..6) {
-                    var status = 0
-                    if (x == 0) {
-                        status = -1
-                    }
-                    if (align == "x") {
-                        location.clone().add(y.toDouble(), x.toDouble(), 0.0).block.type = yellowRedMaterial(status)
-                    } else if (align == "z") {
-                        location.clone().add(0.0, x.toDouble(), y.toDouble()).block.type = yellowRedMaterial(status)
-                    }
+    override fun reset(gamePreset: GameState?) {
+        if (gamePreset != null) {
+            @Suppress("UNCHECKED_CAST")
+            boardState = gamePreset.boardState as Array<IntArray>
+            player = gamePreset.player
+            end = gamePreset.end
+        } else {
+            boardState = Array(SIZE) { IntArray(SIZE) }
+            selected = -1
+            player = 1
+            end = false
+        }
+
+        displaySelectedTask?.cancel()
+        uuidPair.clear()
+        display()
+    }
+
+    override fun move(x: Int, y: Int, z: Int, movePlayer: Player): Boolean {
+        for (fallingBlock in fallingBlocks) {
+            if (fallingBlock.isValid) return false
+        }
+        fallingBlocks.clear()
+        if (!end && boardState[x][6] < 6) {
+            val playerUUID = movePlayer.uniqueId
+            if (selected != -1) {
+                for (board in boards.values) {
+                    board.origin.clone().add(board.xAxis.clone().multiply(selected)).block.type = Method.yellowRedMaterial(-1)
                 }
             }
-        }
-    }
-
-    fun remove() {
-        if (displaySelectedTask != null) displaySelectedTask!!.cancel()
-        for (x in 0..6) {
-            var status = 0
-            if (x == 0) {
-                status = -1
-            }
-            if (align == "x") {
-                location.clone().add(x.toDouble(), 0.0, 0.0).block.type = Material.AIR
-            } else if (align == "z") {
-                location.clone().add(0.0, 0.0, x.toDouble()).block.type = Material.AIR
-            }
-        }
-    }
-
-    fun move(y: Int, minecraftPlayer: Player): Boolean {
-        if (!end && top!![y] < 6) {
-            if (minecraftPlayers[player - 1] == null || minecraftPlayers[player - 1] == minecraftPlayer) {
-                if (minecraftPlayers[player - 1] == null) minecraftPlayers[player - 1] = minecraftPlayer
-                if (selected == -1 || selected != y) {
-                    if (displaySelectedTask != null) displaySelectedTask!!.cancel()
-                    if (selected != -1) {
-                        var block: Block? = null
-                        if (align == "x") {
-                            block = location.clone().add(selected.toDouble(), 0.0, 0.0).block
-                        } else if (align == "z") {
-                            block = location.clone().add(0.0, 0.0, selected.toDouble()).block
-                        }
-                        block!!.type = yellowRedMaterial(-1)
-                    }
-                    selected = y
+            if (uuidPair.getPlayerUUID(player) == playerUUID || uuidPair.putPlayerUUID(playerUUID)) {
+                displaySelectedTask?.cancel()
+                if (selected == -1 || selected != x) {
+                    selected = x
                     visible = true
                     displaySelectedTask = Bukkit.getScheduler().runTaskTimer(
-                        gameInstance,
+                        pluginInstance,
                         Runnable {
-                            var selectedBlock: Block? = null
-                            if (align == "x") {
-                                selectedBlock = location.clone().add(y.toDouble(), 0.0, 0.0).block
-                            } else if (align == "z") {
-                                selectedBlock = location.clone().add(0.0, 0.0, y.toDouble()).block
+                            for (board in boards.values) {
+                                val selectedBlock: Block = board.origin.clone().add(board.xAxis.clone().multiply(x)).block
+                                if (visible) {
+                                    selectedBlock.type = Method.yellowRedMaterial(player)
+                                } else {
+                                    selectedBlock.type = Method.yellowRedMaterial(-1)
+                                }
+                                visible = !visible
                             }
-
-                            if (visible) {
-                                selectedBlock!!.type = yellowRedMaterial(player)
-                            } else {
-                                selectedBlock!!.type = yellowRedMaterial(-1)
-                            }
-                            visible = !visible
                         },
                         0,
                         10
                     )
                 } else {
-                    displaySelectedTask!!.cancel()
-                    var block: Block? = null
-                    if (align == "x") {
-                        block = location.clone().add(y.toDouble(), 0.0, 0.0).block
-                    } else if (align == "z") {
-                        block = location.clone().add(0.0, 0.0, y.toDouble()).block
-                    }
-                    block!!.type = yellowRedMaterial(-1)
+                    display()
                     selected = -1
-
-                    board!![top!![y]][y] = player
-                    if (align == "x") {
-                        location.clone().add(y.toDouble(), 6.0, 0.0).block.type = yellowRedMaterial(player)
-                    } else if (align == "z") {
-                        location.clone().add(0.0, 6.0, y.toDouble()).block.type = yellowRedMaterial(player)
+                    boardState[x][boardState[x][6]] = player
+                    for (board in boards.values) {
+                        val location = board.origin.clone()
+                            .add(board.xAxis.clone().multiply(x))
+                            .add(board.yAxis.clone().multiply(6))
+                            .add(0.5, 0.0, 0.5)
+                        fallingBlocks.add(
+                            location.world.spawn(location, FallingBlock::class.java) { entity ->
+                                entity.blockData = Method.yellowRedMaterial(player).createBlockData()
+                                entity.dropItem = false
+                                entity.velocity = Vector(0.0, 0.1, 0.0)
+                            }
+                        )
                     }
-                    if (isWin(top!![y], y)) {
+                    if (isWin(x, boardState[x][6])) {
                         val component: Component
                         if (player == 1) {
                             component = Component.text("黃色勝利").color(NamedTextColor.YELLOW)
-                            yellowRedFirework(center!!.clone().add(0.0, 3.0, 0.0), true)
+                            for (board in boards.values) {
+                                Method.yellowRedFirework(board.center.clone().add(0.0, 4.0, 0.0), true)
+                            }
                         } else {
                             component = Component.text("紅色勝利").color(NamedTextColor.RED)
-                            yellowRedFirework(center!!.clone().add(0.0, 3.0, 0.0), false)
+                            for (board in boards.values) {
+                                Method.yellowRedFirework(board.center.clone().add(0.0, 4.0, 0.0), false)
+                            }
                         }
-                        Method.broadcast(component, center!!, 7)
+                        broadcast(component)
                         end = true
                     } else if (isTie()) {
-                        Method.broadcast("平手", center!!, 7)
+                        broadcast("平手")
                         end = true
                     } else {
-                        top!![y]++
+                        boardState[x][6]++
                         player = if (player == 1) {
                             2
                         } else {
@@ -190,31 +187,41 @@ class ConnectFour(var gameInstance: Game, var location: Location, var align: Str
                 }
                 return true
             } else {
-                val component = Component.text("已被玩家 " + minecraftPlayers[player - 1]!!.name + " 綁定").color(NamedTextColor.RED)
-                minecraftPlayer.sendMessage(component)
-                minecraftPlayer.playSound(minecraftPlayer, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
+                val component = Component.text("已被玩家 " + Bukkit.getPlayer(uuidPair.getPlayerUUID(player)!!)?.name + " 綁定").color(NamedTextColor.RED)
+                movePlayer.sendMessage(component)
+                movePlayer.playSound(movePlayer, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
                 return false
             }
         }
         return false
     }
 
-    fun isInside(x: Int, y: Int): Boolean {
-        return x in 0..<6 && y in 0..<7
+    override fun display() {
+        for (board in boards.values) {
+            for (x in 0..<SIZE) {
+                val location = board.origin.clone().add(board.xAxis.clone().multiply(x))
+
+                location.block.type = Method.yellowRedMaterial(-1)
+                location.add(board.yAxis)
+                for (y in 0..<6) {
+                    location.block.type = Method.yellowRedMaterial(boardState[x][y])
+                    location.add(board.yAxis)
+                }
+            }
+        }
     }
 
     private fun isWin(x: Int, y: Int): Boolean {
-        val vectors = arrayOf<IntArray?>(intArrayOf(1, 0), intArrayOf(0, 1), intArrayOf(1, 1), intArrayOf(1, -1), intArrayOf(-1, 0), intArrayOf(0, -1), intArrayOf(-1, -1), intArrayOf(-1, 1))
         val counter = IntArray(4)
         for (i in 0..7) {
             var checkX = x
             var checkY = y
             @Suppress("UNUSED_PARAMETER")
             for (j in 1..3) {
-                checkX += vectors[i]!![0]
-                checkY += vectors[i]!![1]
-                if (isInside(checkX, checkY)) {
-                    if (board!![checkX][checkY] == player) {
+                checkX += GameConstants.eightDirection[i][0]
+                checkY += GameConstants.eightDirection[i][1]
+                if (isInside(checkX, checkY) && y < 6) {
+                    if (boardState[checkX][checkY] == player) {
                         counter[i % 4]++
                     } else {
                         break
@@ -229,9 +236,9 @@ class ConnectFour(var gameInstance: Game, var location: Location, var align: Str
     }
 
     private fun isTie(): Boolean {
-        for (x in 0..5) {
-            for (y in 0..6) {
-                if (board!![x][y] == 0) {
+        for (x in 0..<SIZE) {
+            for (y in 0..<6) {
+                if (boardState[x][y] == 0) {
                     return false
                 }
             }

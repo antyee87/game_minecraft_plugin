@@ -33,6 +33,7 @@ dependencies {
             attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
         }
     }
+    implementation(kotlin("reflect"))
 }
 
 val javaVersion = JavaVersion.VERSION_21

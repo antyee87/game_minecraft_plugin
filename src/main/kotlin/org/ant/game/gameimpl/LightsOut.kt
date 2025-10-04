@@ -1,82 +1,82 @@
 package org.ant.game.gameimpl
 
-import org.ant.game.BoardGame
-import org.ant.game.Game
-import org.ant.game.GameDeSerializable
-import org.ant.game.GameSerializable
+import org.ant.game.AntGamePlugin
+import org.ant.game.gameimpl.gameframe.BoardGame
+import org.ant.game.gameimpl.gameframe.GameDeSerializable
+import org.ant.game.gameimpl.gameframe.GameSerializable
+import org.ant.game.gameimpl.gameframe.GameState
+import org.ant.game.gameimpl.gameframe.Method
+import org.ant.game.gameimpl.gameframe.RecordSerializable
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.block.data.Lightable
 import org.bukkit.block.data.type.CopperBulb
 import org.bukkit.entity.Player
+import org.bukkit.util.Vector
 import kotlin.math.roundToInt
 
-class LightsOut(location: Location, size: Int, displayLocation: Location?, displayAlign: String?) :
-    BoardGame(location, displayLocation, displayAlign, size),
-    GameSerializable {
+class LightsOut(size: Int) :
+    BoardGame(size),
+    GameSerializable,
+    RecordSerializable {
     companion object : GameDeSerializable {
         var vectors = arrayOf<IntArray>(intArrayOf(0, 0), intArrayOf(1, 0), intArrayOf(0, 1), intArrayOf(-1, 0), intArrayOf(0, -1))
 
-        override fun deserialize(gameInstance: Game, args: Map<String, Any?>): LightsOut {
-            return LightsOut(
-                args["location"] as Location,
-                args["size"] as Int,
-                args["display_location"] as Location?,
-                args["display_align"] as String?
-            )
+        override fun deserialize(pluginInstance: AntGamePlugin, args: Map<String, Any?>): GameSerializable {
+            val lightsOut = LightsOut(args["size"] as Int)
+
+            @Suppress("UNCHECKED_CAST")
+            val boards = args["boards"] as Map<String, Map<String, Any?>>
+            for ((key, value) in boards) {
+                @Suppress("UNCHECKED_CAST")
+                lightsOut.setBoard(
+                    value["origin"] as Location,
+                    value["xAxis"] as Vector,
+                    value["yAxis"] as Vector,
+                    key
+                )
+            }
+            return lightsOut
         }
     }
 
-    var board: Array<BooleanArray>? = null
+    var boardState = Array(size) { BooleanArray(size) }
 
     init {
-        this.location = location
-        this.size = size
-        this.center = location.clone()
-        this.center.add(size.toDouble() / 2, 0.0, size.toDouble() / 2)
-        this.displayLocation = displayLocation
-        this.displayAlign = displayAlign
-        reset(board)
+        reset(null)
     }
 
     override fun serialize(): MutableMap<String, Any?> {
-        val data = HashMap<String, Any?>()
-        data["location"] = this.location
-        data["size"] = this.size
-        data["display_location"] = this.displayLocation
-        data["display_align"] = this.displayAlign
+        val data = hashMapOf<String, Any?>()
+        data["size"] = size
+        for ((name, board) in boards) {
+            data["boards.$name"] = mapOf<String, Any?>(
+                "origin" to board.origin,
+                "xAxis" to board.xAxis,
+                "yAxis" to board.yAxis
+            )
+        }
         return data
     }
 
     override fun deserializeRecord(data: Map<String, Any?>) {
         @Suppress("UNCHECKED_CAST")
         val boardPreset = Method.deserialize2dBooleanBoard(data["board"] as List<String>?)
-        reset(boardPreset)
+        reset(GameState(boardPreset, 0, false))
     }
 
     override fun serializeRecord(): MutableMap<String, Any?> {
         val data = HashMap<String, Any?>()
-        data["board"] = Method.serialize2dBooleanBoard(this.board)
+        data["board"] = Method.serialize2dBooleanBoard(this.boardState)
         return data
     }
 
-    override fun setDisplay(location: Location?, displayAlign: String?) {
-        super.setDisplay(location, displayAlign)
-        this.displayLocation = location
-        this.displayAlign = displayAlign
-    }
-
-    override fun removeDisplay() {
-        super.removeDisplay()
-        this.displayLocation = null
-        this.displayAlign = null
-    }
-
-    fun reset(boardPreset: Array<BooleanArray>?) {
-        if (boardPreset != null) {
-            board = boardPreset
+    override fun reset(gamePreset: GameState?) {
+        @Suppress("UNCHECKED_CAST")
+        if (gamePreset != null) {
+            boardState = gamePreset.boardState as Array<BooleanArray>
         } else {
-            board = Array(size) { BooleanArray(size) }
+            boardState = Array(size) { BooleanArray(size) }
             for (x in 0..<size) {
                 for (y in 0..<size) {
                     val random = (Math.random().roundToInt())
@@ -89,44 +89,35 @@ class LightsOut(location: Location, size: Int, displayLocation: Location?, displ
         display()
     }
 
-    private fun display() {
-        for (x in 0..<size) {
-            for (y in 0..<size) {
-                var block = location.clone().add(x.toDouble(), 0.0, y.toDouble()).block
-                block.type = Material.WAXED_COPPER_BULB
-                var lightable: Lightable = block.blockData as CopperBulb
-                lightable.isLit = board!![x][y]
-                block.blockData = lightable
-                if (displayLocation != null) {
-                    if (displayAlign == "x") {
-                        block = displayLocation!!.clone().add(x.toDouble(), y.toDouble(), 0.0).block
-                        block.type = Material.WAXED_COPPER_BULB
-                        lightable = block.blockData as CopperBulb
-                        lightable.isLit = board!![x][y]
-                        block.blockData = lightable
-                    } else if (displayAlign == "z") {
-                        block = displayLocation!!.clone().add(0.0, x.toDouble(), y.toDouble()).block
-                        block.type = Material.WAXED_COPPER_BULB
-                        lightable = block.blockData as CopperBulb
-                        lightable.isLit = board!![x][y]
-                        block.blockData = lightable
-                    }
+    override fun display() {
+        for (board in boards.values) {
+            for (x in 0..<size) {
+                val location = board.origin.clone().add(board.xAxis.clone().multiply(x))
+                for (y in 0..<size) {
+                    val block = location.block
+
+                    block.type = Material.WAXED_COPPER_BULB
+                    val lightable: Lightable = block.blockData as CopperBulb
+                    lightable.isLit = boardState[x][y]
+                    block.blockData = lightable
+
+                    location.add(board.yAxis)
                 }
             }
         }
     }
 
-    fun move(x: Int, z: Int): Boolean {
+    fun move(x: Int, y: Int): Boolean {
         for (vector in vectors) {
-            if (isInside(x + vector[0], z + vector[1])) {
-                board!![x + vector[0]][z + vector[1]] = !board!![x + vector[0]][z + vector[1]]
+            if (isInside(x + vector[0], y + vector[1])) {
+                boardState[x + vector[0]][y + vector[1]] = !boardState[x + vector[0]][y + vector[1]]
             }
         }
         display()
         return true
     }
 
-    override fun move(x: Int, z: Int, minecraftPlayer: Player): Boolean {
-        return move(x, z)
+    override fun move(x: Int, y: Int, z: Int, movePlayer: Player): Boolean {
+        return move(x, y)
     }
 }
