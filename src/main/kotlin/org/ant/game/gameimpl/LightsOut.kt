@@ -30,10 +30,10 @@ class LightsOut(size: Int) :
             for ((key, value) in boards) {
                 @Suppress("UNCHECKED_CAST")
                 lightsOut.setBoard(
+                    key,
                     value["origin"] as Location,
                     value["xAxis"] as Vector,
-                    value["yAxis"] as Vector,
-                    key
+                    value["yAxis"] as Vector
                 )
             }
             return lightsOut

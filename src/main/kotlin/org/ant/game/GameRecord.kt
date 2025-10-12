@@ -7,10 +7,10 @@ import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.File
 
-class GameRecord(instance: AntGamePlugin, fileName: String) {
-    val file = File(instance.dataFolder, fileName)
-    val config: FileConfiguration = YamlConfiguration.loadConfiguration(file)
-    val recordSerializableGames = instance.recordSerializableGames
+class GameRecord(pluginInstance: AntGamePlugin, fileName: String) {
+    private val file = File(pluginInstance.dataFolder, fileName)
+    private val config: FileConfiguration = YamlConfiguration.loadConfiguration(file)
+    private val recordSerializableGames = pluginInstance.recordSerializableGames
 
     init {
         load()

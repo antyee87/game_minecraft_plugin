@@ -9,10 +9,10 @@ object GamesManager {
     val games = hashMapOf<String, MutableMap<String, GameSerializable>>()
     val gameClasses = hashMapOf<String, KClass<out GameSerializable>>()
     val gameCompanionObjects = hashMapOf<String, GameDeSerializable>()
-    inline fun <reified T : GameSerializable> addGame(gameName: String): GamesManager {
+    fun <T : GameSerializable> addGame(gameName: String, clazz: KClass<T>): GamesManager {
         games[gameName] = hashMapOf()
-        gameClasses[gameName] = T::class
-        gameCompanionObjects[gameName] = T::class.companionObjectInstance as GameDeSerializable
+        gameClasses[gameName] = clazz
+        gameCompanionObjects[gameName] = clazz.companionObjectInstance as GameDeSerializable
         return this
     }
 }

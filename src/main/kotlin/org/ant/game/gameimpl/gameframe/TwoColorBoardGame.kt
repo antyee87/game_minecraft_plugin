@@ -7,11 +7,11 @@ import org.bukkit.Material
 import org.bukkit.scheduler.BukkitTask
 
 abstract class TwoColorBoardGame(
-    var pluginInstance: AntGamePlugin,
+    val pluginInstance: AntGamePlugin,
     size: Int
 ) : BoardGame(size) {
 
-    var boardState = Array(SIZE) { IntArray(SIZE) }
+    open var boardState = Array(SIZE) { IntArray(SIZE) }
     var player: Int = 0
     var end: Boolean = false
     val uuidPair = UUIDPair()

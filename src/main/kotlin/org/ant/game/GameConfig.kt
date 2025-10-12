@@ -6,9 +6,9 @@ import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.File
 
-class GameConfig(private val instance: AntGamePlugin, fileName: String) {
-    val file = File(instance.dataFolder, fileName)
-    val config: FileConfiguration = YamlConfiguration.loadConfiguration(file)
+class GameConfig(private val pluginInstance: AntGamePlugin, fileName: String) {
+    private val file = File(pluginInstance.dataFolder, fileName)
+    private val config: FileConfiguration = YamlConfiguration.loadConfiguration(file)
 
     init {
         load()
@@ -20,7 +20,7 @@ class GameConfig(private val instance: AntGamePlugin, fileName: String) {
             if (section != null) {
                 for (key in section.getKeys(false)) {
                     val data = section.getConfigurationSection(key)!!.toMapRecursively()
-                    gameInstances[key] = GamesManager.gameCompanionObjects[configKey]!!.deserialize(instance, data)
+                    gameInstances[key] = GamesManager.gameCompanionObjects[configKey]!!.deserialize(pluginInstance, data)
                 }
             }
         }

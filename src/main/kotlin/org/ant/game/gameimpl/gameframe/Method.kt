@@ -1,5 +1,10 @@
 package org.ant.game.gameimpl.gameframe
 
+import com.mojang.brigadier.arguments.ArgumentType
+import com.mojang.brigadier.arguments.BoolArgumentType
+import com.mojang.brigadier.arguments.DoubleArgumentType
+import com.mojang.brigadier.arguments.IntegerArgumentType
+import com.mojang.brigadier.arguments.StringArgumentType
 import net.kyori.adventure.text.Component
 import org.ant.game.gameimpl.gameframe.GameConstants.CardinalDirection
 import org.ant.game.gameimpl.gameframe.GameConstants.Orientation
@@ -54,6 +59,16 @@ object Method {
         return Material.AIR
     }
 
+    fun yellowRedGlassMaterial(status: Int): Material {
+        when (status) {
+            -1 -> return Material.IRON_BLOCK
+            0 -> return Material.AIR
+            1 -> return Material.YELLOW_STAINED_GLASS
+            2 -> return Material.RED_STAINED_GLASS
+        }
+        return Material.AIR
+    }
+
     /**
      * getAxis for board by cardinal directions and orientation
      * xAxis equal to the direction
@@ -68,7 +83,8 @@ object Method {
         }
 
         val yAxis = when (orientation) {
-            Orientation.VERTICAL -> Vector(0.0, 1.0, 0.0)
+            Orientation.VERTICAL_POSITIVE -> Vector(0.0, 1.0, 0.0)
+            Orientation.VERTICAL_NEGATIVE -> Vector(0.0, -1.0, 0.0)
             Orientation.HORIZONTAL -> Vector(-xAxis.z, 0.0, xAxis.x)
         }
         return Pair(xAxis, yAxis)
@@ -149,5 +165,13 @@ object Method {
         return board
             ?.map { y -> y.map { it.map(Char::digitToInt).toIntArray() }.toTypedArray() }
             ?.toTypedArray()
+    }
+
+    fun getArgumentType(value: Any): ArgumentType<*> = when (value) {
+        is Int -> IntegerArgumentType.integer()
+        is Double -> DoubleArgumentType.doubleArg()
+        is Boolean -> BoolArgumentType.bool()
+        is String -> StringArgumentType.string()
+        else -> StringArgumentType.string()
     }
 }

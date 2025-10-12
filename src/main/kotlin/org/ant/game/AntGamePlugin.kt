@@ -3,27 +3,26 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.ant.game.command.GameCommand
 import org.ant.game.gameimpl.Chess
 import org.ant.game.gameimpl.ConnectFour
+import org.ant.game.gameimpl.Go
 import org.ant.game.gameimpl.Gomoku
 import org.ant.game.gameimpl.LightsOut
 import org.ant.game.gameimpl.Reversi
 import org.ant.game.gameimpl.ScoreFour
 import org.bukkit.plugin.java.JavaPlugin
-import javax.xml.stream.Location
 
 class AntGamePlugin : JavaPlugin() {
-    private val instance = this
     private var initSucceed = false
-
-    val flyableArea = mutableListOf<Pair<Location, Location>>()
+    lateinit var gameAreaManager: GameAreaManager
 
     init {
         GamesManager
-            .addGame<Chess>("chess")
-            .addGame<Gomoku>("gomoku")
-            .addGame<Reversi>("reversi")
-            .addGame<LightsOut>("lightsOut")
-            .addGame<ConnectFour>("connectFour")
-            .addGame<ScoreFour>("scoreFour")
+            .addGame("chess", Chess::class)
+            .addGame("gomoku", Gomoku::class)
+            .addGame("reversi", Reversi::class)
+            .addGame("lightsOut", LightsOut::class)
+            .addGame("connectFour", ConnectFour::class)
+            .addGame("scoreFour", ScoreFour::class)
+//            .addGame("go", Go::class)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -41,15 +40,19 @@ class AntGamePlugin : JavaPlugin() {
 
     override fun onEnable() {
         logger.info("Ant遊戲插件已啟用")
+        gameAreaManager = GameAreaManager(this)
+
         this.lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) { commands ->
-            GameCommand(instance, commands)
+            GameCommand(this, commands)
         }
 
-        server.pluginManager.registerEvents(OperateListener(instance), instance)
+        server.pluginManager.registerEvents(OperateListener(this), this)
+        server.pluginManager.registerEvents(gameAreaManager, this)
 
         saveDefaultConfig()
-        gameConfig = GameConfig(instance, "game.yml")
-        gameRecord = GameRecord(instance, "record.yml")
+        gameConfig = GameConfig(this, "game.yml")
+        gameRecord = GameRecord(this, "record.yml")
+
         initSucceed = true
     }
 
@@ -57,7 +60,9 @@ class AntGamePlugin : JavaPlugin() {
         if (initSucceed) {
             gameConfig.save()
             gameRecord.save()
+            gameAreaManager.save()
         }
+        GamesManager.games.clear()
         logger.info("Ant遊戲插件已停用")
     }
 }

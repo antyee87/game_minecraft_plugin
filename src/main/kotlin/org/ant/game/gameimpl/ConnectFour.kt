@@ -35,10 +35,10 @@ class ConnectFour(val pluginInstance: AntGamePlugin) :
             val boards = args["boards"] as Map<String, Map<String, Any?>>
             for ((key, value) in boards) {
                 connectFour.setBoard(
+                    key,
                     value["origin"] as Location,
                     value["xAxis"] as Vector,
-                    value["yAxis"] as Vector,
-                    key
+                    value["yAxis"] as Vector
                 )
             }
             return connectFour

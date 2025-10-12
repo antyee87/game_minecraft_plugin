@@ -21,7 +21,7 @@ import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import org.bukkit.util.Vector
 
-class ScoreFour(val pluginInstance: AntGamePlugin) :
+class ScoreFour(private val pluginInstance: AntGamePlugin) :
     BoardGame(SIZE),
     GameSerializable,
     RecordSerializable {
@@ -35,10 +35,10 @@ class ScoreFour(val pluginInstance: AntGamePlugin) :
             val boards = args["boards"] as Map<String, Map<String, Any?>>
             for ((key, value) in boards) {
                 scoreFour.setBoard(
+                    key,
                     value["origin"] as Location,
                     value["xAxis"] as Vector,
-                    value["yAxis"] as Vector,
-                    key
+                    value["yAxis"] as Vector
                 )
             }
             return scoreFour
@@ -144,7 +144,7 @@ class ScoreFour(val pluginInstance: AntGamePlugin) :
                         board.origin.clone()
                             .add(board.xAxis.clone().multiply(2 * selected!!.x))
                             .add(board.yAxis.clone().multiply(2 * selected!!.y))
-                            .block.type = Method.yellowRedMaterial(-1)
+                            .block.type = Method.yellowRedGlassMaterial(-1)
                     }
                 }
 
@@ -160,9 +160,9 @@ class ScoreFour(val pluginInstance: AntGamePlugin) :
                                     .add(board.yAxis.clone().multiply(2 * y))
                                     .block
                                 if (visible) {
-                                    selectedBlock.type = Method.yellowRedMaterial(player)
+                                    selectedBlock.type = Method.yellowRedGlassMaterial(player)
                                 } else {
-                                    selectedBlock.type = Method.yellowRedMaterial(-1)
+                                    selectedBlock.type = Method.yellowRedGlassMaterial(-1)
                                 }
                             }
 
@@ -183,7 +183,7 @@ class ScoreFour(val pluginInstance: AntGamePlugin) :
                             .add(0.5, 0.0, 0.5)
                         fallingBlocks.add(
                             location.world.spawn(location, FallingBlock::class.java) { entity ->
-                                entity.blockData = Method.yellowRedMaterial(player).createBlockData()
+                                entity.blockData = Method.yellowRedGlassMaterial(player).createBlockData()
                                 entity.dropItem = false
                                 entity.velocity = Vector(0.0, 0.1, 0.0)
                             }
@@ -286,10 +286,10 @@ class ScoreFour(val pluginInstance: AntGamePlugin) :
                     val location = board.origin.clone()
                         .add(board.xAxis.clone().multiply(2 * x))
                         .add(board.yAxis.clone().multiply(2 * y))
-                    location.block.type = Method.yellowRedMaterial(-1)
+                    location.block.type = Method.yellowRedGlassMaterial(-1)
                     location.add(0.0, 1.0, 0.0)
                     for (z in 0..<SIZE) {
-                        location.block.type = Method.yellowRedMaterial(boardState[x][y][z])
+                        location.block.type = Method.yellowRedGlassMaterial(boardState[x][y][z])
                         location.add(0.0, 1.0, 0.0)
                     }
                 }

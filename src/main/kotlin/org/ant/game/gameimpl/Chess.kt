@@ -24,7 +24,7 @@ import java.util.UUID
 import kotlin.collections.arrayListOf
 import kotlin.math.abs
 
-class Chess(val pluginInstance: AntGamePlugin) :
+class Chess(private val pluginInstance: AntGamePlugin) :
     BoardGame(SIZE),
     GameSerializable,
     RecordSerializable {
@@ -59,40 +59,6 @@ class Chess(val pluginInstance: AntGamePlugin) :
             intArrayOf(-2, 1)
         )
 
-        enum class PieceType(val value: Int) {
-            PAWN(1),
-            ROOK(2),
-            KNIGHT(3),
-            BISHOP(4),
-            QUEEN(5),
-            KING(6);
-
-            companion object {
-                private val byNumber = entries.associateBy(PieceType::value)
-
-                fun fromNumber(number: Int): PieceType? = byNumber[number]
-            }
-        }
-
-        enum class Color(val value: Int) {
-            WHITE(0),
-            BLACK(1);
-
-            companion object {
-                private val byNumber = entries.associateBy(Color::value)
-
-                fun fromNumber(number: Int): Color? = byNumber[number]
-            }
-        }
-
-        enum class MoveType(val value: Int) {
-            NORMAL(1),
-            CAPTURE(2),
-            PROMOTION(3),
-            EN_PASSANT(4),
-            CASTLING(5),
-        }
-
         override fun deserialize(pluginInstance: AntGamePlugin, args: Map<String, Any?>): Chess {
             val chess = Chess(pluginInstance)
 
@@ -100,15 +66,88 @@ class Chess(val pluginInstance: AntGamePlugin) :
             val boards = args["boards"] as Map<String, Map<String, Any?>>
             for ((key, value) in boards) {
                 chess.setBoard(
+                    key,
                     value["origin"] as Location,
                     value["xAxis"] as Vector,
-                    value["yAxis"] as Vector,
-                    key
+                    value["yAxis"] as Vector
                 )
             }
             return chess
         }
     }
+
+    enum class PieceType(val value: Int) {
+        PAWN(1),
+        ROOK(2),
+        KNIGHT(3),
+        BISHOP(4),
+        QUEEN(5),
+        KING(6);
+
+        companion object {
+            private val byNumber = entries.associateBy(PieceType::value)
+
+            fun fromNumber(number: Int): PieceType? = byNumber[number]
+        }
+    }
+
+    enum class Color(val value: Int) {
+        WHITE(0),
+        BLACK(1);
+
+        companion object {
+            private val byNumber = entries.associateBy(Color::value)
+
+            fun fromNumber(number: Int): Color? = byNumber[number]
+        }
+    }
+
+    enum class MoveType(val value: Int) {
+        NORMAL(1),
+        CAPTURE(2),
+        PROMOTION(3),
+        EN_PASSANT(4),
+        CASTLING(5),
+    }
+
+    class Piece(var type: PieceType, val color: Color, var hadMoved: Boolean = false) {
+        fun texture(): String {
+            return when (color) {
+                Color.WHITE -> {
+                    when (type) {
+                        PieceType.PAWN -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjg0OWRlNzBjYTg4NWIzZTFjNTE4NTE2MGI3NDA2MzlhZDFjNzgyMGJjMmI3N2QwYTVhYmMyZTU0NWY1ZTkwNSJ9fX0="
+                        PieceType.ROOK -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMWY4MjVmYWQ4MzA4OTg5ZjlkMmE1MTA4ZTEyMjM4ZmIxMDI3MGM0ZDFmZDE3YzFiNjQzNmZlOGQyYjI0MmQxMCJ9fX0="
+                        PieceType.KNIGHT -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTA0YWRiZmEzZjg1Nzg5ZGQ0Yzc3NDk5YmNhNWMyY2VjMTU3MWEwODJiM2NjMDgwMDU4NmY5YTRkMzNiNTA3OSJ9fX0="
+                        PieceType.BISHOP -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjIyNGU4MDliOWE1ODc2OTExNzZhMWIzNGQyZDUxM2ZmODE0MGY2MDZkMjViZTU3ZjA3NWU5NmM3M2EyNWIzYiJ9fX0="
+                        PieceType.QUEEN -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjE0M2Y2ODRlNjc5MjU5MGNjNGFkYThlODY3MDBhNTMxODc1ZjQ4Y2Y4OTE3M2M3ZWEwMjU0MjMxNDRmMGExNSJ9fX0="
+                        PieceType.KING -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzBlNzE0MDk2YTBkZDQwNDI4OTBhOTUxMGQ4NTdhNzZhNTBjMzRlODJhNDM4YzZiZjEyOTMxNWEyOWVjODViMyJ9fX0="
+                    }
+                }
+                Color.BLACK -> {
+                    when (type) {
+                        PieceType.PAWN -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNTg4NTUzMjk5ZmQ0ZTgzMTMyYTI2YTBlMGQyNzZiNjA0ZmVkYTVmYmEzNDg1MDFkMDc2MDI4Y2U5ODgzNDEzZSJ9fX0="
+                        PieceType.ROOK -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTVjMjRlYTM4MjE0NzUyOWNlN2I1ZmRhZGJhZDVhMDFkMDAwMzg0NTY1NGNhOTA0NjQwM2U1NjkxNzhlZWZiMCJ9fX0="
+                        PieceType.KNIGHT -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDExZjMzNmRlNTJiMjgzMzc4Zjk5MmM2NDk3NGRkNTYzZTQ1YjEzMDdjNTNmYzUzZjQxMTEyZWUyZGYyMTAzMCJ9fX0="
+                        PieceType.BISHOP -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjBjOWEzNDBlMDQyM2E0MTgyOTQ1NzNkMmRkYmU1OTY4MmRkMjg5ZDhjZTQ4ZWE0Y2Y1ZTVmOWY0YzY1ZjU1YiJ9fX0="
+                        PieceType.QUEEN -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTExNzk3YjlhODIxNWRkMzRiMmZlNmQwNWJlYzFkNjM4ZDZlODdkOWVhMjZkMDMxODYwOGI5NzZkZjJmZDI1OSJ9fX0="
+                        PieceType.KING -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmQxOWVlOThhOWJkNzRjZWQ4OGY5M2FkMWI1ZTQ1NzdhOTI5NGEwZDgwZGZlMDcyOTIxYTNkMGVjZDBkZGMwNSJ9fX0="
+                    }
+                }
+            }
+        }
+
+        fun profile(): PlayerProfile {
+            val profile = Bukkit.createProfile(UUID.randomUUID())
+            profile.setProperty(ProfileProperty("textures", texture()))
+            return profile
+        }
+    }
+
+    data class Move(
+        val to: Pos,
+        val captured: Piece? = null,
+        val moveType: MoveType = MoveType.NORMAL
+    )
 
     var boardState: Array<Array<Piece?>> = Array(SIZE) { arrayOfNulls(SIZE) }
 
@@ -274,13 +313,13 @@ class Chess(val pluginInstance: AntGamePlugin) :
                 val location = board.origin.clone().add(board.xAxis.clone().multiply(x))
                 for (y in 0..<SIZE) {
                     if (moveable[x][y]) {
-                        if ((x + y) % 2 == 0) {
+                        if ((x + y) % 2 == 1) {
                             location.block.type = Material.STRIPPED_SPRUCE_LOG
                         } else {
                             location.block.type = Material.STRIPPED_BIRCH_LOG
                         }
                     } else {
-                        if ((x + y) % 2 == 0) {
+                        if ((x + y) % 2 == 1) {
                             location.block.type = Material.STRIPPED_SPRUCE_WOOD
                         } else {
                             location.block.type = Material.STRIPPED_BIRCH_WOOD
@@ -601,6 +640,7 @@ class Chess(val pluginInstance: AntGamePlugin) :
             val uuid = movePlayer.uniqueId
             if (uuidPair.getPlayerUUID(player.value + 1) == uuid || uuidPair.putPlayerUUID(uuid)) {
                 if (promotionTarget != null) {
+                    if (z !in 2..5) return false
                     val x = promotionTarget!!.x
                     val y = promotionTarget!!.y
                     for (board in boards.values) {
@@ -640,6 +680,8 @@ class Chess(val pluginInstance: AntGamePlugin) :
                     }
                     if (move == null) return false
 
+                    enPassantTarget = null
+
                     boardState[x][y] = boardState[selected!!.x][selected!!.y]
                     boardState[selected!!.x][selected!!.y] = null
                     boardState[x][y]!!.hadMoved = true
@@ -654,6 +696,7 @@ class Chess(val pluginInstance: AntGamePlugin) :
                             }
                             boardState[x][backward] = null
                         } else if (y == 0 || y == 7) {
+                            broadcast("Promotion")
                             promotionTarget = Pos(x, y)
                         }
                     }
@@ -674,10 +717,14 @@ class Chess(val pluginInstance: AntGamePlugin) :
                         switchPlayer()
                     } else {
                         for (board in boards.values) {
+                            val location = board.origin.clone()
+                                .add(board.xAxis.clone().multiply(x))
+                                .add(board.yAxis.clone().multiply(y))
+                                .add(0.0, 1.0, 0.0)
                             for (i in 2..5) {
-                                val block = board.origin.clone().add(x.toDouble(), i.toDouble(), y.toDouble()).block
-                                block.type = Material.PLAYER_HEAD
-                                val skull = block.state as Skull
+                                location.add(0.0, 1.0, 0.0)
+                                location.block.type = Material.PLAYER_HEAD
+                                val skull = location.block.state as Skull
                                 skull.setPlayerProfile(Piece(PieceType.fromNumber(i)!!, color!!).profile())
                                 skull.update()
                             }
@@ -739,43 +786,4 @@ class Chess(val pluginInstance: AntGamePlugin) :
             end = true
         }
     }
-
-    class Piece(var type: PieceType, val color: Color, var hadMoved: Boolean = false) {
-        fun texture(): String {
-            return when (color) {
-                Color.WHITE -> {
-                    when (type) {
-                        PieceType.PAWN -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjg0OWRlNzBjYTg4NWIzZTFjNTE4NTE2MGI3NDA2MzlhZDFjNzgyMGJjMmI3N2QwYTVhYmMyZTU0NWY1ZTkwNSJ9fX0="
-                        PieceType.ROOK -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMWY4MjVmYWQ4MzA4OTg5ZjlkMmE1MTA4ZTEyMjM4ZmIxMDI3MGM0ZDFmZDE3YzFiNjQzNmZlOGQyYjI0MmQxMCJ9fX0="
-                        PieceType.KNIGHT -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTA0YWRiZmEzZjg1Nzg5ZGQ0Yzc3NDk5YmNhNWMyY2VjMTU3MWEwODJiM2NjMDgwMDU4NmY5YTRkMzNiNTA3OSJ9fX0="
-                        PieceType.BISHOP -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjIyNGU4MDliOWE1ODc2OTExNzZhMWIzNGQyZDUxM2ZmODE0MGY2MDZkMjViZTU3ZjA3NWU5NmM3M2EyNWIzYiJ9fX0="
-                        PieceType.QUEEN -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjE0M2Y2ODRlNjc5MjU5MGNjNGFkYThlODY3MDBhNTMxODc1ZjQ4Y2Y4OTE3M2M3ZWEwMjU0MjMxNDRmMGExNSJ9fX0="
-                        PieceType.KING -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzBlNzE0MDk2YTBkZDQwNDI4OTBhOTUxMGQ4NTdhNzZhNTBjMzRlODJhNDM4YzZiZjEyOTMxNWEyOWVjODViMyJ9fX0="
-                    }
-                }
-                Color.BLACK -> {
-                    when (type) {
-                        PieceType.PAWN -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNTg4NTUzMjk5ZmQ0ZTgzMTMyYTI2YTBlMGQyNzZiNjA0ZmVkYTVmYmEzNDg1MDFkMDc2MDI4Y2U5ODgzNDEzZSJ9fX0="
-                        PieceType.ROOK -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTVjMjRlYTM4MjE0NzUyOWNlN2I1ZmRhZGJhZDVhMDFkMDAwMzg0NTY1NGNhOTA0NjQwM2U1NjkxNzhlZWZiMCJ9fX0="
-                        PieceType.KNIGHT -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDExZjMzNmRlNTJiMjgzMzc4Zjk5MmM2NDk3NGRkNTYzZTQ1YjEzMDdjNTNmYzUzZjQxMTEyZWUyZGYyMTAzMCJ9fX0="
-                        PieceType.BISHOP -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjBjOWEzNDBlMDQyM2E0MTgyOTQ1NzNkMmRkYmU1OTY4MmRkMjg5ZDhjZTQ4ZWE0Y2Y1ZTVmOWY0YzY1ZjU1YiJ9fX0="
-                        PieceType.QUEEN -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTExNzk3YjlhODIxNWRkMzRiMmZlNmQwNWJlYzFkNjM4ZDZlODdkOWVhMjZkMDMxODYwOGI5NzZkZjJmZDI1OSJ9fX0="
-                        PieceType.KING -> "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmQxOWVlOThhOWJkNzRjZWQ4OGY5M2FkMWI1ZTQ1NzdhOTI5NGEwZDgwZGZlMDcyOTIxYTNkMGVjZDBkZGMwNSJ9fX0="
-                    }
-                }
-            }
-        }
-
-        fun profile(): PlayerProfile {
-            val profile = Bukkit.createProfile(UUID.randomUUID())
-            profile.setProperty(ProfileProperty("textures", texture()))
-            return profile
-        }
-    }
-
-    data class Move(
-        val to: Pos,
-        val captured: Piece? = null,
-        val moveType: MoveType = MoveType.NORMAL
-    )
 }

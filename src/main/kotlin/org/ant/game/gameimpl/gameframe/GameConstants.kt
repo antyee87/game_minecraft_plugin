@@ -9,8 +9,9 @@ object GameConstants {
     }
 
     enum class Orientation {
-        VERTICAL,
-        HORIZONTAL
+        VERTICAL_POSITIVE,
+        VERTICAL_NEGATIVE,
+        HORIZONTAL,
     }
 
     val eightDirection = arrayOf(

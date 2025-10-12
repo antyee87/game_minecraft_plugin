@@ -12,7 +12,12 @@ abstract class BoardGame(val size: Int) : GameSerializable {
 
     abstract fun display()
 
-    open fun setBoard(origin: Location, cardinalDirection: GameConstants.CardinalDirection, orientation: GameConstants.Orientation, name: String) {
+    open fun setBoard(
+        name: String,
+        origin: Location,
+        cardinalDirection: GameConstants.CardinalDirection,
+        orientation: GameConstants.Orientation
+    ) {
         if (boards.containsKey(name)) boards[name]!!.remove()
         val axisPair = Method.getAxis(cardinalDirection, orientation)
         val center = origin.clone()
@@ -22,7 +27,7 @@ abstract class BoardGame(val size: Int) : GameSerializable {
         display()
     }
 
-    open fun setBoard(origin: Location, xAxis: Vector, yAxis: Vector, name: String) {
+    open fun setBoard(name: String, origin: Location, xAxis: Vector, yAxis: Vector) {
         val center = origin.clone()
             .add(xAxis.clone().multiply(size / 2.0))
             .add(yAxis.clone().multiply(size / 2.0))
