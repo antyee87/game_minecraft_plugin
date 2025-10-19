@@ -53,9 +53,10 @@ class Go(pluginInstance: AntGamePlugin) :
 
     var pieceString: Array<PieceNode?> = arrayOfNulls(SIZE * SIZE)
     var pieceStringLiberty = IntArray(SIZE * SIZE) { -1 }
-    var totalCapture = IntArray(2)
     var ko: Int? = null // 劫
     var selected: Pos? = null
+
+    var sgfContent = ""
 
     init {
         reset(null)
@@ -74,11 +75,72 @@ class Go(pluginInstance: AntGamePlugin) :
     }
 
     override fun deserializeRecord(data: Map<String, Any?>) {
-        TODO("Not yet implemented")
+        reset(GameState(data["board"] as String, 1, false))
     }
 
     override fun serializeRecord(): MutableMap<String, Any?> {
-        TODO("Not yet implemented")
+        return hashMapOf("board" to sgfContent)
+    }
+
+    override fun reset(gamePreset: GameState?) {
+        sgfContent = ""
+        player = 1
+        pieceString = arrayOfNulls(SIZE * SIZE)
+        pieceStringLiberty = IntArray(SIZE * SIZE) { -1 }
+        ko = null
+        if (gamePreset != null) {
+            val boardSgf = gamePreset.boardState as String
+            var operate = ""
+            var argument = ""
+            var getOperate = true
+            for (it in 0..<boardSgf.length) {
+                when (boardSgf[it]) {
+                    ';' -> continue
+                    '[' -> getOperate = false
+                    ']' -> {
+                        if (!getOperate) {
+                            getOperate = true
+                        } else {
+                            break
+                        }
+                        when (operate) {
+                            "B" -> {
+                                player = 1
+                                if (argument.length == 2) {
+                                    val x = argument[0] - 'a'
+                                    val y = argument[1] - 'a'
+                                    moveImpl(x, y)
+                                }
+                            }
+                            "W" -> {
+                                player = 2
+                                if (argument.length == 2) {
+                                    val x = argument[0] - 'a'
+                                    val y = argument[1] - 'a'
+                                    moveImpl(x, y)
+                                }
+                            }
+                        }
+                        operate = ""
+                        argument = ""
+                    }
+                    else -> {
+                        if (getOperate) {
+                            operate += boardSgf[it]
+                        } else {
+                            argument += boardSgf[it]
+                        }
+                    }
+                }
+            }
+        } else {
+            boardState = Array(SIZE) { IntArray(SIZE) }
+        }
+        selected = null
+        displaySelectedTask?.cancel()
+
+        uuidPair.clear()
+        display()
     }
 
     private fun countLiberty(vertex: Int): Int {
@@ -97,16 +159,75 @@ class Go(pluginInstance: AntGamePlugin) :
         return libertySet.count()
     }
 
+    private fun moveImpl(x: Int, y: Int) {
+        boardState[x][y] = player
+        val moveVertex = x + SIZE * y
+        pieceString[moveVertex] = PieceNode(moveVertex, moveVertex)
+        pieceStringLiberty[moveVertex] = 1
+        var adjacent = false
+        for (v in vectors) {
+            val dx = v[0]
+            val dy = v[1]
+            if (isInside(x + dx, y + dy)) {
+                if (boardState[x + dx][y + dy] in 1..2) {
+                    val adjacencyVertex = moveVertex + (dx + SIZE * dy)
+                    if (boardState[x + dx][y + dy] == player) {
+                        if (pieceString[adjacencyVertex]!!.identity == moveVertex) continue
+                        pieceStringLiberty[pieceString[adjacencyVertex]!!.identity] = -1
+                        val tmp = pieceString[moveVertex]!!.next
+                        pieceString[moveVertex]!!.next = pieceString[adjacencyVertex]!!.next
+                        pieceString[adjacencyVertex]!!.next = tmp
+
+                        var curNode = pieceString[moveVertex]!!
+                        do {
+                            curNode.identity = moveVertex
+                            curNode = pieceString[curNode.next]!!
+                        } while (curNode.identity != moveVertex)
+                        adjacent = true
+                    } else {
+                        pieceStringLiberty[pieceString[adjacencyVertex]!!.identity] = countLiberty(adjacencyVertex)
+                    }
+                }
+            }
+        }
+        var captureCount = 0
+        for (identity in 0..<(SIZE * SIZE)) {
+            if (pieceStringLiberty[identity] == 0) {
+                var curVertex = identity
+                while (pieceString[curVertex] != null) {
+                    boardState[curVertex % SIZE][curVertex / SIZE] = 0
+                    ++captureCount
+                    val tmpCurVertex = curVertex
+                    curVertex = pieceString[curVertex]!!.next
+                    pieceString[tmpCurVertex] = null
+                }
+                pieceStringLiberty[identity] = -1
+            }
+        }
+        for (identity in 0..<(SIZE * SIZE)) {
+            if (pieceStringLiberty[identity] == -1) continue
+            pieceStringLiberty[identity] = countLiberty(identity)
+        }
+
+        ko = null
+        if (!adjacent && pieceStringLiberty[moveVertex] == 1 && captureCount == 1) ko = moveVertex
+
+        val color = if (player == 1) "B" else "W"
+        sgfContent += ";$color[${'a' + x}${'a' + y}]"
+    }
+
     override fun move(
         x: Int,
         y: Int,
         z: Int,
         movePlayer: Player
     ): Boolean {
-        if (!end && boardState[x][y] == 0) {
-            val playerUUID = movePlayer.uniqueId
-            if (uuidPair.getPlayerUUID(player) == playerUUID || uuidPair.putPlayerUUID(playerUUID)) {
-                if (selected == null || selected!!.x != x || selected!!.y != y) {
+        val playerUUID = movePlayer.uniqueId
+        if (uuidPair.getPlayerUUID(player) == playerUUID || uuidPair.putPlayerUUID(playerUUID)) {
+            if (selected == null || selected!!.x != x || selected!!.y != y) {
+                displaySelectedTask?.cancel()
+                if (selected != null) displaySingle(selected!!.x, selected!!.y, boardState[selected!!.x][selected!!.y])
+                if (boardState[x][y] == 0) {
                     val moveVertex = x + SIZE * y
                     var isValid = false
                     for (v in vectors) {
@@ -115,9 +236,7 @@ class Go(pluginInstance: AntGamePlugin) :
                         if (isInside(x + dx, y + dy)) {
                             if (boardState[x + dx][y + dy] in 1..2) {
                                 val adjacencyVertex = moveVertex + (dx + SIZE * dy)
-                                if (adjacencyVertex == ko) {
-                                    return false
-                                }
+                                if (adjacencyVertex == ko) return false
                                 if (boardState[x + dx][y + dy] == player) {
                                     if (pieceStringLiberty[pieceString[adjacencyVertex]!!.identity] > 1) {
                                         isValid = true
@@ -137,120 +256,50 @@ class Go(pluginInstance: AntGamePlugin) :
                     }
                     if (!isValid) return false
 
-                    displaySelectedTask?.cancel()
-                    if (selected != null) displaySingle(selected!!.x, selected!!.y, 0)
                     selected = Pos(x, y)
                     select(x, y, player, 0)
                 } else {
-                    displaySelectedTask?.cancel()
-                    boardState[x][y] = player
-                    val moveVertex = x + SIZE * y
-                    pieceString[moveVertex] = PieceNode(moveVertex, moveVertex)
-                    pieceStringLiberty[moveVertex] = 0
-                    var adjacent = false
-                    for (v in vectors) {
-                        val dx = v[0]
-                        val dy = v[1]
-                        if (isInside(x + dx, y + dy)) {
-                            if (boardState[x + dx][y + dy] in 1..2) {
-                                val adjacencyVertex = moveVertex + (dx + SIZE * dy)
-                                if (boardState[x + dx][y + dy] == player) {
-                                    pieceStringLiberty[adjacencyVertex] = -1
-                                    val tmp = pieceString[moveVertex]!!.next
-                                    pieceString[moveVertex]!!.next = pieceString[adjacencyVertex]!!.next
-                                    pieceString[adjacencyVertex]!!.next = tmp
-
-                                    var curNode = pieceString[moveVertex]!!
-                                    do {
-                                        curNode.identity = moveVertex
-                                        curNode = pieceString[curNode.next]!!
-                                    } while (curNode.identity != moveVertex)
-                                    adjacent = true
-                                } else {
-                                    pieceStringLiberty[pieceString[adjacencyVertex]!!.identity] = countLiberty(adjacencyVertex)
-                                }
-                            }
-                        }
-                    }
-                    var captureCount = 0
-                    for (identity in 0..<(SIZE * SIZE)) {
-                        if (pieceStringLiberty[identity] == -1) continue
-                        if (boardState[identity % SIZE][identity / SIZE] != player) {
-                            if (pieceStringLiberty[identity] == 0) {
-                                var curVertex = identity
-                                while (pieceString[curVertex] != null) {
-                                    boardState[curVertex % SIZE][curVertex / SIZE] = 0
-                                    ++captureCount
-                                    val tmpCurVertex = curVertex
-                                    curVertex = pieceString[curVertex]!!.next
-                                    pieceString[tmpCurVertex] = null
-                                }
-                                pieceStringLiberty[identity] = -1
-                            }
-                        }
-                    }
-                    if (captureCount > 0) {
-                        for (identity in 0..<(SIZE * SIZE)) {
-                            if (pieceStringLiberty[identity] == -1) continue
-                            pieceStringLiberty[identity] = countLiberty(identity)
-                        }
-                    }
-                    totalCapture[player - 1] += captureCount
-
-                    ko = null
-                    if (adjacent) {
-                        // TODO
-                    } else {
-                        if (pieceStringLiberty[moveVertex] == 1 && captureCount == 1) ko = moveVertex
-                    }
-
-//                    var result = ""
-//                    for (i in 0..<(SIZE * SIZE)) {
-//                        if (i % SIZE == 0) result += "\n"
-//                        result += String.format("%02d ", pieceStringLiberty[i])
-//                    }
-//                    pluginInstance.logger.info(result)
-
-                    display()
-                    selected = null
-
-                    player = if (player == 1) {
-                        2
-                    } else {
-                        1
-                    }
+                    val component =
+                        Component.text("此點位已有棋子，再次點擊視為虛手!")
+                            .color(NamedTextColor.RED)
+                    movePlayer.sendMessage(component)
+                    movePlayer.playSound(movePlayer, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
+                    selected = Pos(x, y)
                 }
-                return true
             } else {
-                val component = Component.text("已被玩家 " + Bukkit.getPlayer(uuidPair.getPlayerUUID(player)!!)?.name + " 綁定").color(NamedTextColor.RED)
-                movePlayer.sendMessage(component)
-                movePlayer.playSound(movePlayer, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
+                displaySelectedTask?.cancel()
+                selected = null
+                if (boardState[x][y] == 0) {
+                    moveImpl(x, y)
+                } else {
+                    val color = if (player == 1) "B" else "W"
+                    sgfContent += ";$color[]"
+                }
+                display()
+                switchPlayer()
             }
+            return true
+        } else {
+            val component =
+                Component.text("已被玩家 " + Bukkit.getPlayer(uuidPair.getPlayerUUID(player)!!)?.name + " 綁定")
+                    .color(NamedTextColor.RED)
+            movePlayer.sendMessage(component)
+            movePlayer.playSound(movePlayer, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
+            return false
         }
-        return false
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun reset(gamePreset: GameState?) {
-        if (gamePreset != null) {
-            boardState = gamePreset.boardState as Array<IntArray>
-            player = gamePreset.player
-            end = gamePreset.end
-            TODO("Not yet implemented")
+    private fun switchPlayer() {
+        player = if (player == 1) {
+            2
         } else {
-            boardState = Array(SIZE) { IntArray(SIZE) }
-            player = 1
-            end = false
-
-            pieceString = arrayOfNulls(SIZE * SIZE)
-            pieceStringLiberty = IntArray(SIZE * SIZE) { -1 }
-            totalCapture = IntArray(2)
-            ko = null
+            1
         }
-        selected = null
-        displaySelectedTask?.cancel()
+    }
 
-        uuidPair.clear()
-        display()
+    fun exportToSGF(): String {
+        val pb = uuidPair.getPlayerUUID(0)?.let { Bukkit.getPlayer(it)?.name } ?: ""
+        val pw = uuidPair.getPlayerUUID(1)?.let { Bukkit.getPlayer(it)?.name } ?: ""
+        return "(;GM[1]FF[4]SZ[19]KM[7.5]PB[$pb]PW[$pw]AP[AntGame]$sgfContent)"
     }
 }

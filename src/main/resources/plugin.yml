@@ -1,5 +1,5 @@
 name: AntGame
-version: "1.1"
+version: "3.0.0"
 main: org.ant.game.AntGamePlugin
 api-version: "1.21.8"
 authors: [ Antonio111 ]

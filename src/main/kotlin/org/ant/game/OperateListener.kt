@@ -1,5 +1,7 @@
 package org.ant.game
 
+import org.ant.game.gameimpl.Chess
+import org.ant.game.gameimpl.ScoreFour
 import org.ant.game.gameimpl.gameframe.BoardGame
 import org.bukkit.Sound
 import org.bukkit.block.Block
@@ -33,10 +35,10 @@ class OperateListener(private val pluginInstance: AntGamePlugin) : Listener {
                 } else {
                     val location = block.location
                     found = false
-                    for (gameName in GamesManager.games.keys) {
-                        val gameInstances = GamesManager.games[gameName] ?: continue
-                        when (gameName) {
-                            "chess" -> {
+                    for (gameClass in GamesManager.games.keys) {
+                        val gameInstances = GamesManager.games[gameClass] ?: continue
+                        when (gameClass) {
+                            Chess::class -> {
                                 @Suppress("UNCHECKED_CAST")
                                 (gameInstances.values as Collection<BoardGame>).forEach { game ->
                                     for (board in game.boards.values) {
@@ -53,7 +55,7 @@ class OperateListener(private val pluginInstance: AntGamePlugin) : Listener {
                                     }
                                 }
                             }
-                            "scoreFour" -> {
+                            ScoreFour::class -> {
                                 @Suppress("UNCHECKED_CAST")
                                 (gameInstances.values as Collection<BoardGame>).forEach { game ->
                                     for (board in game.boards.values) {

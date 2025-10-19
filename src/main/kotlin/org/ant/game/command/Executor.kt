@@ -13,8 +13,18 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.ant.game.AntGamePlugin
 import org.ant.game.GamesManager
+import org.ant.game.gameimpl.Chess
+import org.ant.game.gameimpl.ConnectFour
+import org.ant.game.gameimpl.Go
+import org.ant.game.gameimpl.LightsOut
+import org.ant.game.gameimpl.ScoreFour
 import org.ant.game.gameimpl.gameframe.BoardGame
 import org.ant.game.gameimpl.gameframe.GameConstants
+import org.ant.game.gameimpl.gameframe.GameSerializable
+import java.io.File
+import kotlin.io.path.Path
+import kotlin.io.path.exists
+import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
 class Executor(private val pluginInstance: AntGamePlugin) {
@@ -26,7 +36,7 @@ class Executor(private val pluginInstance: AntGamePlugin) {
             MessageComponentSerializer.message().serialize(Component.text("Invalid group name!"))
         )
     }
-    fun setupGame(ctx: CommandContext<CommandSourceStack>, gameName: String): Int {
+    fun setupGame(ctx: CommandContext<CommandSourceStack>, gameClass: KClass<out GameSerializable>): Int {
         @Suppress("UnstableApiUsage")
         val origin = ctx.getArgument(
             "origin",
@@ -44,17 +54,16 @@ class Executor(private val pluginInstance: AntGamePlugin) {
         }.getOrNull()
         val groupName = ctx.getArgument("group_name", String::class.java)
         val name = ctx.getArgument("name", String::class.java)
-        val gameInstances = GamesManager.games[gameName]
+        val gameInstances = GamesManager.games[gameClass]
 
         if (gameInstances == null) {
             pluginInstance.logger.warning("[Executor] Invalid game name")
             return 0
         }
 
-        val gameClass = GamesManager.gameClasses[gameName] ?: return 0
         if (!(gameInstances.containsKey(groupName))) {
-            when (gameName) {
-                "lightsOut" -> {
+            when (gameClass) {
+                LightsOut::class -> {
                     val size = runCatching { ctx.getArgument("size", Int::class.java) }.getOrNull() ?: throw ERROR_SIZE.create()
                     gameInstances[groupName] = gameClass.primaryConstructor!!.call(size)
                 }
@@ -63,14 +72,14 @@ class Executor(private val pluginInstance: AntGamePlugin) {
             }
         }
         val game = gameInstances[groupName]as BoardGame
-        when (gameName) {
-            "chess", "scoreFour" -> game.setBoard(
+        when (gameClass) {
+            Chess::class, ScoreFour::class -> game.setBoard(
                 name,
                 origin,
                 cardinalDirection,
                 GameConstants.Orientation.HORIZONTAL
             )
-            "connectFour" -> game.setBoard(
+            ConnectFour::class -> game.setBoard(
                 name,
                 origin,
                 cardinalDirection,
@@ -83,14 +92,14 @@ class Executor(private val pluginInstance: AntGamePlugin) {
                 orientation!!
             )
         }
-        pluginInstance.logger.info("[Executor] Setup board($gameName/$groupName/$name) success!")
+        pluginInstance.logger.info("[Executor] Setup board($gameClass/$groupName/$name) success!")
 
         return Command.SINGLE_SUCCESS
     }
 
-    fun resetBoard(ctx: CommandContext<CommandSourceStack>, gameName: String): Int {
+    fun resetBoard(ctx: CommandContext<CommandSourceStack>, gameClass: KClass<out GameSerializable>): Int {
         val groupName = ctx.getArgument("group_name", String::class.java)
-        val game = GamesManager.games[gameName]?.get(groupName) ?: throw ERROR_GROUP_NAME.create()
+        val game = GamesManager.games[gameClass]?.get(groupName) ?: throw ERROR_GROUP_NAME.create()
         if (game is BoardGame) {
             game.reset(null)
             return Command.SINGLE_SUCCESS
@@ -99,13 +108,13 @@ class Executor(private val pluginInstance: AntGamePlugin) {
         }
     }
 
-    fun removeBoard(ctx: CommandContext<CommandSourceStack>, gameName: String): Int {
+    fun removeBoard(ctx: CommandContext<CommandSourceStack>, gameClass: KClass<out GameSerializable>): Int {
         val groupName = ctx.getArgument("group_name", String::class.java)
         val name = runCatching {
             ctx.getArgument("name", String::class.java)
         }.getOrNull()
-        val gameInstances = GamesManager.games[gameName] ?: return 0
-        val game = GamesManager.games[gameName]!![groupName] ?: throw ERROR_GROUP_NAME.create()
+        val gameInstances = GamesManager.games[gameClass] ?: return 0
+        val game = GamesManager.games[gameClass]!![groupName] ?: throw ERROR_GROUP_NAME.create()
         if (game is BoardGame) {
             game.remove(name)
             if (game.boards.isEmpty()) gameInstances.remove(groupName)
@@ -115,16 +124,16 @@ class Executor(private val pluginInstance: AntGamePlugin) {
         }
     }
 
-    fun listGame(ctx: CommandContext<CommandSourceStack>, gameName: String): Int {
+    fun listGame(ctx: CommandContext<CommandSourceStack>, gameClass: KClass<out GameSerializable>): Int {
         val groupName = runCatching {
             ctx.getArgument("group_name", String::class.java)
         }.getOrNull()
-        val gameInstances = GamesManager.games[gameName] ?: return 0
-        val game = GamesManager.games[gameName]!![groupName]
+        val gameInstances = GamesManager.games[gameClass] ?: return 0
+        val game = GamesManager.games[gameClass]!![groupName]
         val component = Component.text()
         component
             .append(Component.text("Game Name: ", NamedTextColor.BLUE))
-            .append(Component.text(gameName, NamedTextColor.GREEN))
+            .append(Component.text(GamesManager.gameNames[gameClass]!!, NamedTextColor.GREEN))
         if (game == null) {
             if (groupName != null) throw ERROR_GROUP_NAME.create()
             for (groupName in gameInstances.keys) {
@@ -163,7 +172,7 @@ class Executor(private val pluginInstance: AntGamePlugin) {
                                 }
                             )
                         )
-                        .clickEvent(ClickEvent.runCommand("/antgame game_operate $gameName list $groupName"))
+                        .clickEvent(ClickEvent.runCommand("/antgame game_operate $gameClass list $groupName"))
                 )
             }
         } else {
@@ -252,6 +261,31 @@ class Executor(private val pluginInstance: AntGamePlugin) {
             )
         }
         ctx.source.sender.sendMessage(component)
+        return Command.SINGLE_SUCCESS
+    }
+
+    fun getSgf(ctx: CommandContext<CommandSourceStack>): Int {
+        val groupName = ctx.getArgument("group_name", String::class.java)
+        val sgfText = (GamesManager.games[Go::class]!![groupName] as? Go)?.exportToSGF() ?: throw ERROR_GROUP_NAME.create()
+        ctx.source.sender.sendMessage(
+            Component.text("點此複製sgf", NamedTextColor.GREEN)
+                .decoration(TextDecoration.UNDERLINED, true)
+                .clickEvent(ClickEvent.copyToClipboard(sgfText))
+        )
+        if (pluginInstance.settingsManager.settings["sgf_directory"] != "") {
+            val directoryPath = pluginInstance.settingsManager.settings["sgf_directory"] as String
+            if (Path(directoryPath).exists()) {
+                File("$directoryPath/$groupName.sgf").writeText(sgfText)
+                val sgfShareUrl = pluginInstance.settingsManager.settings["sgf_share_url"] as String
+                if (sgfShareUrl != "") {
+                    ctx.source.sender.sendMessage(
+                        Component.text("點此下載sgf", NamedTextColor.GREEN)
+                            .decoration(TextDecoration.UNDERLINED, true)
+                            .clickEvent(ClickEvent.openUrl("$sgfShareUrl/$groupName.sgf"))
+                    )
+                }
+            }
+        }
         return Command.SINGLE_SUCCESS
     }
 }

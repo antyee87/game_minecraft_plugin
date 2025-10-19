@@ -16,10 +16,10 @@ class GameConfig(private val pluginInstance: AntGamePlugin, fileName: String) {
 
     fun load() {
         GamesManager.games.forEach { (configKey, gameInstances) ->
-            val section = config.getConfigurationSection(configKey)
+            val section = config.getConfigurationSection(GamesManager.gameNames[configKey]!!)
             if (section != null) {
                 for (key in section.getKeys(false)) {
-                    val data = section.getConfigurationSection(key)!!.toMapRecursively()
+                    val data = section.getConfigurationSection(key)?.toMapRecursively() ?: continue
                     gameInstances[key] = GamesManager.gameCompanionObjects[configKey]!!.deserialize(pluginInstance, data)
                 }
             }
@@ -28,9 +28,9 @@ class GameConfig(private val pluginInstance: AntGamePlugin, fileName: String) {
 
     fun save(): Int {
         GamesManager.games.forEach { (configKey, gameInstances) ->
-            config[configKey] = null
+            config[GamesManager.gameNames[configKey]!!] = null
             for ((key, value) in gameInstances) {
-                config["$configKey.$key"] = value.serialize()
+                config["${GamesManager.gameNames[configKey]!!}.$key"] = value.serialize()
             }
         }
 

@@ -4,20 +4,22 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.ant.game.AntGamePlugin
 import org.ant.game.gameimpl.gameframe.BoardGame
+import org.ant.game.gameimpl.gameframe.GameConstants
 import org.ant.game.gameimpl.gameframe.GameDeSerializable
 import org.ant.game.gameimpl.gameframe.GameSerializable
 import org.ant.game.gameimpl.gameframe.GameState
 import org.ant.game.gameimpl.gameframe.Method
 import org.ant.game.gameimpl.gameframe.Pos
 import org.ant.game.gameimpl.gameframe.RecordSerializable
+import org.ant.game.gameimpl.gameframe.ScoreFourBoard
 import org.ant.game.gameimpl.gameframe.UUIDPair
 import org.bukkit.Bukkit
 import org.bukkit.Location
-import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.Entity
 import org.bukkit.entity.FallingBlock
 import org.bukkit.entity.Player
+import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.scheduler.BukkitTask
 import org.bukkit.util.Vector
 
@@ -87,6 +89,20 @@ class ScoreFour(private val pluginInstance: AntGamePlugin) :
         data["end"] = end
         return data
     }
+    override fun setBoard(
+        name: String,
+        origin: Location,
+        cardinalDirection: GameConstants.CardinalDirection,
+        orientation: GameConstants.Orientation
+    ) {
+        if (boards.containsKey(name)) boards[name]!!.remove()
+        val axisPair = Method.getAxis(cardinalDirection, orientation)
+        val center = origin.clone()
+            .add(axisPair.first.clone().multiply(size / 2.0))
+            .add(axisPair.second.clone().multiply(size / 2.0))
+        boards[name] = ScoreFourBoard(origin, center, axisPair.first, axisPair.second, size)
+        display()
+    }
 
     override fun reset(gamePreset: GameState?) {
         if (gamePreset != null) {
@@ -103,29 +119,6 @@ class ScoreFour(private val pluginInstance: AntGamePlugin) :
         if (displaySelectedTask != null) displaySelectedTask!!.cancel()
         uuidPair.clear()
         display()
-    }
-
-    override fun remove(removed: String?) {
-        val removed: List<String> = if (removed == null) {
-            boards.keys.toList()
-        } else {
-            listOf(removed)
-        }
-        for (name in removed) {
-            if (boards.containsKey(name)) {
-                val board = boards[name]!!
-                for (x in 0..<SIZE) {
-                    for (y in 0..<SIZE) {
-                        val location = board.origin.clone().add(board.xAxis.clone().multiply(2 * x)).add(board.yAxis.clone().multiply(2 * y))
-                        for (z in 0..<SIZE) {
-                            location.block.type = Material.AIR
-                            location.add(0.0, 1.0, 0.0)
-                        }
-                    }
-                }
-                boards.remove(name)
-            }
-        }
     }
 
     var visible: Boolean = true
@@ -182,7 +175,7 @@ class ScoreFour(private val pluginInstance: AntGamePlugin) :
                             .add(0.0, 4.0, 0.0)
                             .add(0.5, 0.0, 0.5)
                         fallingBlocks.add(
-                            location.world.spawn(location, FallingBlock::class.java) { entity ->
+                            location.world.spawn(location, FallingBlock::class.java, CreatureSpawnEvent.SpawnReason.DEFAULT) { entity ->
                                 entity.blockData = Method.yellowRedGlassMaterial(player).createBlockData()
                                 entity.dropItem = false
                                 entity.velocity = Vector(0.0, 0.1, 0.0)

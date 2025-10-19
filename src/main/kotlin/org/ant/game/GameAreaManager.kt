@@ -18,20 +18,9 @@ import kotlin.math.max
 import kotlin.math.min
 
 class GameAreaManager(private val pluginInstance: AntGamePlugin) : Listener {
-    data class Setting<T>(
-        val key: String,
-        var value: T,
-        val description: String = "",
-        val onChange: ((T) -> Unit)? = null
-    )
-
     private val file = File(pluginInstance.dataFolder, "area.yml")
     private val config: FileConfiguration = YamlConfiguration.loadConfiguration(file)
     val gameAreas = hashMapOf<String, Pair<Location, Location>>()
-    val settings = hashMapOf<String, Setting<Any>>(
-        "visible" to Setting("visible", false),
-        "flyable" to Setting("flyable", true)
-    )
     private var gameAreaTask: BukkitTask? = null
 
     init {
@@ -52,12 +41,6 @@ class GameAreaManager(private val pluginInstance: AntGamePlugin) : Listener {
             @Suppress("UNCHECKED_CAST")
             gameAreas[key] = Pair(gameAreasSection["$key.first"] as Location, gameAreasSection["$key.second"] as Location)
         }
-
-        val settingsSection = config.getConfigurationSection("settings") ?: return
-        for (key in settingsSection.getKeys(false)) {
-            @Suppress("UNCHECKED_CAST")
-            settings[key]?.value = settingsSection[key] as Any
-        }
     }
 
     fun save(): Int {
@@ -65,11 +48,6 @@ class GameAreaManager(private val pluginInstance: AntGamePlugin) : Listener {
             config["gameAreas.$name.first"] = area.first
             config["gameAreas.$name.second"] = area.second
         }
-
-        settings.forEach { (name, setting) ->
-            config["settings.$name"] = setting.value
-        }
-
         config.save(file)
 
         return Command.SINGLE_SUCCESS
@@ -79,7 +57,7 @@ class GameAreaManager(private val pluginInstance: AntGamePlugin) : Listener {
     fun onPlayerMove(event: PlayerMoveEvent) {
         if (event.hasChangedPosition()) {
             val player = event.player
-            if (settings["flyable"]?.value as Boolean) setFly(player)
+            if (pluginInstance.settingsManager.settings["flyable"] as Boolean) setFly(player)
         }
     }
 
@@ -91,7 +69,7 @@ class GameAreaManager(private val pluginInstance: AntGamePlugin) : Listener {
     }
 
     private fun showGameArea() {
-        if (!(settings["visible"]?.value as Boolean)) return
+        if (!(pluginInstance.settingsManager.settings["visible"] as Boolean)) return
         for (gameArea in gameAreas.values) {
             val minX = gameArea.first.x
             val maxX = gameArea.second.x

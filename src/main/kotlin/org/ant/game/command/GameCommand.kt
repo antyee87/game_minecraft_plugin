@@ -13,9 +13,16 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.ant.game.AntGamePlugin
 import org.ant.game.GamesManager
+import org.ant.game.gameimpl.Chess
+import org.ant.game.gameimpl.ConnectFour
+import org.ant.game.gameimpl.Go
+import org.ant.game.gameimpl.LightsOut
+import org.ant.game.gameimpl.ScoreFour
 import org.ant.game.gameimpl.gameframe.BoardGame
+import org.ant.game.gameimpl.gameframe.GameSerializable
 import org.ant.game.gameimpl.gameframe.Method
 import java.util.concurrent.CompletableFuture
+import kotlin.reflect.KClass
 
 class GameCommand(private val pluginInstance: AntGamePlugin, private val commands: ReloadableRegistrarEvent<Commands>) {
     val executor = Executor(pluginInstance)
@@ -27,10 +34,10 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
     private fun registerCommand() {
         val gameOperateCommand = Commands.literal("game_operate")
 
-        for (gameName in GamesManager.games.keys) {
-            val gameCommand = Commands.literal(gameName)
-            when (gameName) {
-                "chess", "connectFour", "scoreFour" -> {
+        for (gameClass in GamesManager.games.keys) {
+            val gameCommand = Commands.literal(GamesManager.gameNames[gameClass]!!)
+            when (gameClass) {
+                Chess::class, ConnectFour::class, ScoreFour::class -> {
                     gameCommand
                         .then(
                             Commands.literal("setup")
@@ -42,14 +49,14 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
                                                     Commands.argument("origin", ArgumentTypes.blockPosition())
                                                         .then(
                                                             Commands.argument("cardinal_direction", CardinalDirectionArgument())
-                                                                .executes { ctx -> executor.setupGame(ctx, gameName) }
+                                                                .executes { ctx -> executor.setupGame(ctx, gameClass) }
                                                         )
                                                 )
                                         )
                                 )
                         )
                 }
-                "lightsOut" -> {
+                LightsOut::class -> {
                     gameCommand
                         .then(
                             Commands.literal("setup")
@@ -65,7 +72,7 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
                                                                     Commands.argument("orientation", OrientationArgument())
                                                                         .then(
                                                                             Commands.argument("size", IntegerArgumentType.integer())
-                                                                                .executes { ctx -> executor.setupGame(ctx, gameName) }
+                                                                                .executes { ctx -> executor.setupGame(ctx, gameClass) }
                                                                         )
                                                                 )
                                                         )
@@ -88,7 +95,7 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
                                                             Commands.argument("cardinal_direction", CardinalDirectionArgument())
                                                                 .then(
                                                                     Commands.argument("orientation", OrientationArgument())
-                                                                        .executes { ctx -> executor.setupGame(ctx, gameName) }
+                                                                        .executes { ctx -> executor.setupGame(ctx, gameClass) }
                                                                 )
                                                         )
                                                 )
@@ -102,46 +109,62 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
                     Commands.literal("reset")
                         .then(
                             Commands.argument("group_name", StringArgumentType.string())
-                                .suggests { _, builder -> gameGroupSuggestions(builder, gameName) }
-                                .executes { ctx -> executor.resetBoard(ctx, gameName) }
+                                .suggests { _, builder -> gameGroupSuggestions(builder, gameClass) }
+                                .executes { ctx -> executor.resetBoard(ctx, gameClass) }
                         )
                 )
                 .then(
                     Commands.literal("remove")
                         .then(
                             Commands.argument("group_name", StringArgumentType.string())
-                                .suggests { _, builder -> gameGroupSuggestions(builder, gameName) }
-                                .executes { ctx -> executor.removeBoard(ctx, gameName) }
+                                .suggests { _, builder -> gameGroupSuggestions(builder, gameClass) }
+                                .executes { ctx -> executor.removeBoard(ctx, gameClass) }
                                 .then(
                                     Commands.argument("name", StringArgumentType.string())
-                                        .suggests { ctx, builder -> gameBoardSuggestions(ctx, builder, gameName) }
-                                        .executes { ctx -> executor.removeBoard(ctx, gameName) }
+                                        .suggests { ctx, builder -> gameBoardSuggestions(ctx, builder, gameClass) }
+                                        .executes { ctx -> executor.removeBoard(ctx, gameClass) }
                                 )
                         )
                 )
                 .then(
                     Commands.literal("list")
-                        .executes { ctx -> executor.listGame(ctx, gameName) }
+                        .executes { ctx -> executor.listGame(ctx, gameClass) }
                         .then(
                             Commands.argument("group_name", StringArgumentType.string())
-                                .suggests { _, builder -> gameGroupSuggestions(builder, gameName) }
-                                .executes { ctx -> executor.listGame(ctx, gameName) }
+                                .suggests { _, builder -> gameGroupSuggestions(builder, gameClass) }
+                                .executes { ctx -> executor.listGame(ctx, gameClass) }
                         )
 
                 )
             gameOperateCommand.then(gameCommand)
         }
 
-        val setCommand = Commands.literal("set")
-
-        for ((key, setting) in pluginInstance.gameAreaManager.settings) {
-            setCommand.then(
-                Commands.literal(key)
+        gameOperateCommand
+            .then(
+                Commands.literal("go")
                     .then(
-                        Commands.argument("value", Method.getArgumentType(setting.value))
+                        Commands.literal("get_sgf")
+                            .then(
+                                Commands.argument("group_name", StringArgumentType.string())
+                                    .suggests { _, builder -> gameGroupSuggestions(builder, Go::class) }
+                                    .executes { ctx -> executor.getSgf(ctx) }
+                            )
+                    )
+            )
+
+        val settingsCommand = Commands.literal("settings")
+        for ((key, setting) in pluginInstance.settingsManager.settings) {
+            settingsCommand.then(
+                Commands.literal(key)
+                    .executes { ctx ->
+                        ctx.source.sender.sendMessage(Component.text("$key = $setting", NamedTextColor.GREEN))
+                        Command.SINGLE_SUCCESS
+                    }
+                    .then(
+                        Commands.argument("value", Method.getArgumentType(setting))
                             .executes { ctx ->
-                                val input = ctx.getArgument("value", setting.value::class.java)
-                                setting.value = input
+                                val input = ctx.getArgument("value", setting::class.java)
+                                pluginInstance.settingsManager.settings[key] = input
                                 ctx.source.sender.sendMessage(Component.text("已設定 $key = $input", NamedTextColor.GREEN))
                                 Command.SINGLE_SUCCESS
                             }
@@ -152,22 +175,29 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
         val antGameCommand = Commands.literal("antgame")
             .requires { sender -> sender.sender.hasPermission("antgame.command") }
             .then(
-                gameOperateCommand
-            )
-            .then(
                 Commands.literal("save")
                     .then(
-                        Commands.literal("game_config")
-                            .executes { pluginInstance.gameConfig.save() }
+                        Commands.literal("settings")
+                            .executes { pluginInstance.settingsManager.save() }
                     )
                     .then(
-                        Commands.literal("game_record")
-                            .executes { pluginInstance.gameRecord.save() }
+                        Commands.literal("game")
+                            .executes {
+                                pluginInstance.gameConfig.save()
+                                pluginInstance.gameRecord.save()
+                            }
                     )
                     .then(
                         Commands.literal("game_area")
                             .executes { pluginInstance.gameAreaManager.save() }
                     )
+            )
+            .then(
+                gameOperateCommand
+
+            )
+            .then(
+                settingsCommand
             )
             .then(
                 Commands.literal("game_area")
@@ -193,9 +223,6 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
                             )
                     )
                     .then(
-                        setCommand
-                    )
-                    .then(
                         Commands.literal("list")
                             .then(
                                 Commands.argument("name", StringArgumentType.string())
@@ -208,16 +235,16 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
         commands.registrar().register(antGameCommand)
     }
 
-    private fun gameGroupSuggestions(builder: SuggestionsBuilder, gameName: String): CompletableFuture<Suggestions> {
-        GamesManager.games[gameName]?.keys?.forEach { text ->
+    private fun gameGroupSuggestions(builder: SuggestionsBuilder, gameClass: KClass<out GameSerializable>): CompletableFuture<Suggestions> {
+        GamesManager.games[gameClass]?.keys?.forEach { text ->
             if (text.startsWith(builder.remainingLowerCase)) builder.suggest(text)
         }
         return CompletableFuture.completedFuture(builder.build())
     }
 
-    private fun gameBoardSuggestions(context: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder, gameName: String): CompletableFuture<Suggestions> {
+    private fun gameBoardSuggestions(context: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder, gameClass: KClass<out GameSerializable>): CompletableFuture<Suggestions> {
         val groupName = context.getArgument("group_name", String::class.java)
-        (GamesManager.games[gameName]?.get(groupName) as? BoardGame)?.boards?.keys?.forEach { text ->
+        (GamesManager.games[gameClass]?.get(groupName) as? BoardGame)?.boards?.keys?.forEach { text ->
             if (text.startsWith(builder.remainingLowerCase)) builder.suggest(text)
         }
         return CompletableFuture.completedFuture(builder.build())

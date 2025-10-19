@@ -18,6 +18,7 @@ import org.bukkit.block.Block
 import org.bukkit.entity.Entity
 import org.bukkit.entity.FallingBlock
 import org.bukkit.entity.Player
+import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.scheduler.BukkitTask
 import org.bukkit.util.Vector
 
@@ -151,7 +152,7 @@ class ConnectFour(val pluginInstance: AntGamePlugin) :
                             .add(board.yAxis.clone().multiply(6))
                             .add(0.5, 0.0, 0.5)
                         fallingBlocks.add(
-                            location.world.spawn(location, FallingBlock::class.java) { entity ->
+                            location.world.spawn(location, FallingBlock::class.java, CreatureSpawnEvent.SpawnReason.DEFAULT) { entity ->
                                 entity.blockData = Method.yellowRedMaterial(player).createBlockData()
                                 entity.dropItem = false
                                 entity.velocity = Vector(0.0, 0.1, 0.0)

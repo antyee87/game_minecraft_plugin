@@ -19,7 +19,7 @@ class GameRecord(pluginInstance: AntGamePlugin, fileName: String) {
     fun load(): Int {
         recordSerializableGames.forEach { configKey ->
             val gameInstances = GamesManager.games[configKey]!!
-            val section = config.getConfigurationSection(configKey)
+            val section = config.getConfigurationSection(GamesManager.gameNames[configKey]!!)
             if (section != null) {
                 for (key in section.getKeys(false)) {
                     val data = section.getConfigurationSection(key)!!.toMapRecursively()
@@ -33,10 +33,10 @@ class GameRecord(pluginInstance: AntGamePlugin, fileName: String) {
 
     fun save(): Int {
         recordSerializableGames.forEach { configKey ->
-            config[configKey] = null
+            config[GamesManager.gameNames[configKey]!!] = null
             val gameInstances = GamesManager.games[configKey]!!
             for ((key, value) in gameInstances) {
-                config["$configKey.$key"] = (value as RecordSerializable).serializeRecord()
+                config["${GamesManager.gameNames[configKey]!!}.$key"] = (value as RecordSerializable).serializeRecord()
             }
         }
 

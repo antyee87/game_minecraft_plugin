@@ -6,13 +6,13 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
 
 object GamesManager {
-    val games = hashMapOf<String, MutableMap<String, GameSerializable>>()
-    val gameClasses = hashMapOf<String, KClass<out GameSerializable>>()
-    val gameCompanionObjects = hashMapOf<String, GameDeSerializable>()
+    val games = hashMapOf<KClass<out GameSerializable>, MutableMap<String, GameSerializable>>()
+    val gameNames = hashMapOf<KClass<out GameSerializable>, String>()
+    val gameCompanionObjects = hashMapOf<KClass<out GameSerializable>, GameDeSerializable>()
     fun <T : GameSerializable> addGame(gameName: String, clazz: KClass<T>): GamesManager {
-        games[gameName] = hashMapOf()
-        gameClasses[gameName] = clazz
-        gameCompanionObjects[gameName] = clazz.companionObjectInstance as GameDeSerializable
+        games[clazz] = hashMapOf()
+        gameNames[clazz] = gameName
+        gameCompanionObjects[clazz] = clazz.companionObjectInstance as GameDeSerializable
         return this
     }
 }
