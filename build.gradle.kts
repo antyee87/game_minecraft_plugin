@@ -1,4 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -6,11 +5,10 @@ plugins {
     kotlin("jvm") version "2.2.20"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.18"
     id("xyz.jpenilla.run-paper") version "2.3.1"
-    id("com.gradleup.shadow") version "9.2.2"
 }
 
 group = "org.ant"
-version = "3.0.0"
+version = "3.0.1"
 
 base {
     archivesName = "AntGame"
@@ -35,7 +33,6 @@ dependencies {
             attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
         }
     }
-    compileOnly(kotlin("stdlib"))
     compileOnly(kotlin("reflect"))
 }
 
@@ -85,16 +82,6 @@ tasks {
         filesMatching("plugin.yml") {
             expand(props)
         }
-    }
-
-    withType<ShadowJar> {
-        archiveClassifier.set("")
-        minimize()
-        exclude("**/kotlin/**")
-    }
-
-    build {
-        dependsOn(shadowJar)
     }
 
     runServer {

@@ -36,75 +36,45 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
 
         for (gameClass in GamesManager.games.keys) {
             val gameCommand = Commands.literal(GamesManager.gameNames[gameClass]!!)
-            when (gameClass) {
-                Chess::class, ConnectFour::class, ScoreFour::class -> {
-                    gameCommand
-                        .then(
-                            Commands.literal("setup")
-                                .then(
-                                    Commands.argument("group_name", StringArgumentType.string())
-                                        .then(
-                                            Commands.argument("name", StringArgumentType.string())
-                                                .then(
-                                                    Commands.argument("origin", ArgumentTypes.blockPosition())
-                                                        .then(
-                                                            Commands.argument("cardinal_direction", CardinalDirectionArgument())
-                                                                .executes { ctx -> executor.setupGame(ctx, gameClass) }
-                                                        )
-                                                )
-                                        )
-                                )
-                        )
-                }
-                LightsOut::class -> {
-                    gameCommand
-                        .then(
-                            Commands.literal("setup")
-                                .then(
-                                    Commands.argument("group_name", StringArgumentType.string())
-                                        .then(
-                                            Commands.argument("name", StringArgumentType.string())
-                                                .then(
-                                                    Commands.argument("origin", ArgumentTypes.blockPosition())
-                                                        .then(
-                                                            Commands.argument("cardinal_direction", CardinalDirectionArgument())
-                                                                .then(
-                                                                    Commands.argument("orientation", OrientationArgument())
-                                                                        .then(
-                                                                            Commands.argument("size", IntegerArgumentType.integer())
-                                                                                .executes { ctx -> executor.setupGame(ctx, gameClass) }
-                                                                        )
-                                                                )
-                                                        )
-                                                )
-                                        )
-                                )
-                        )
-                }
-                else -> {
-                    gameCommand
-                        .then(
-                            Commands.literal("setup")
-                                .then(
-                                    Commands.argument("group_name", StringArgumentType.string())
-                                        .then(
-                                            Commands.argument("name", StringArgumentType.string())
-                                                .then(
-                                                    Commands.argument("origin", ArgumentTypes.blockPosition())
-                                                        .then(
-                                                            Commands.argument("cardinal_direction", CardinalDirectionArgument())
-                                                                .then(
-                                                                    Commands.argument("orientation", OrientationArgument())
-                                                                        .executes { ctx -> executor.setupGame(ctx, gameClass) }
-                                                                )
-                                                        )
-                                                )
-                                        )
-                                )
-                        )
-                }
-            }
             gameCommand
+                .then(
+                    Commands.literal("setup")
+                        .then(
+                            Commands.argument("group_name", StringArgumentType.string())
+                                .then(
+                                    Commands.argument("name", StringArgumentType.string())
+                                        .then(
+                                            Commands.argument("origin", ArgumentTypes.blockPosition())
+                                                .then(
+                                                    Commands.argument("cardinal_direction", CardinalDirectionArgument())
+                                                        .let { it1 ->
+                                                            when(gameClass) {
+                                                                Chess::class, ConnectFour::class, ScoreFour::class -> {
+                                                                    it1.executes { ctx -> executor.setupGame(ctx, gameClass) }
+                                                                }
+                                                                else -> it1.then(
+                                                                Commands.argument("orientation", OrientationArgument())
+                                                                    .let { it2 ->
+                                                                        when(gameClass) {
+                                                                            LightsOut::class -> {
+                                                                                it2.then(
+                                                                                    Commands.argument("size", IntegerArgumentType.integer())
+                                                                                        .executes { ctx -> executor.setupGame(ctx, gameClass) }
+                                                                                )
+                                                                            }
+                                                                            else -> {
+                                                                                it2.executes { ctx -> executor.setupGame(ctx, gameClass) }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                )
+                                                            }
+                                                        }
+                                                )
+                                        )
+                                )
+                        )
+                )
                 .then(
                     Commands.literal("reset")
                         .then(
