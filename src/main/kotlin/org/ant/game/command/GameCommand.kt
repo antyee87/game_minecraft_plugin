@@ -123,17 +123,17 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
             )
 
         val settingsCommand = Commands.literal("settings")
-        for ((key, setting) in pluginInstance.settingsManager.settings) {
+        for (key in pluginInstance.settingsManager.settings.keys) {
             settingsCommand.then(
                 Commands.literal(key)
                     .executes { ctx ->
-                        ctx.source.sender.sendMessage(Component.text("$key = $setting", NamedTextColor.GREEN))
+                        ctx.source.sender.sendMessage(Component.text("$key = ${pluginInstance.settingsManager.settings[key]}", NamedTextColor.GREEN))
                         Command.SINGLE_SUCCESS
                     }
                     .then(
-                        Commands.argument("value", Method.getArgumentType(setting))
+                        Commands.argument("value", Method.getArgumentType(pluginInstance.settingsManager.settings[key]!!))
                             .executes { ctx ->
-                                val input = ctx.getArgument("value", setting::class.java)
+                                val input = ctx.getArgument("value", pluginInstance.settingsManager.settings[key]!!::class.java)
                                 pluginInstance.settingsManager.settings[key] = input
                                 ctx.source.sender.sendMessage(Component.text("已設定 $key = $input", NamedTextColor.GREEN))
                                 Command.SINGLE_SUCCESS

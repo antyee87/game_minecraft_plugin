@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "org.ant"
-version = "3.0.1"
+version = "3.0.2"
 
 base {
     archivesName = "AntGame"
