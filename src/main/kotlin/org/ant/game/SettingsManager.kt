@@ -10,7 +10,8 @@ class SettingsManager(private val pluginInstance: AntGamePlugin) {
         "visible" to false,
         "flyable" to true,
         "sgf_directory" to "",
-        "sgf_share_url" to ""
+        "sgf_share_url" to "",
+        "game_interaction_range" to 64.0
     )
 
     init {

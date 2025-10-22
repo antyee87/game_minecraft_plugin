@@ -10,7 +10,6 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.util.Vector
 import java.util.UUID
 
@@ -22,68 +21,61 @@ class OperateListener(private val pluginInstance: AntGamePlugin) : Listener {
 
     @EventHandler
     fun onInteract(event: PlayerInteractEvent) {
-        val block = event.clickedBlock
-        val player = event.player
-        val playerId = player.uniqueId
-        val currentTime = System.currentTimeMillis()
-
-        if (!cooldowns.containsKey(playerId) || currentTime - cooldowns[playerId]!! > 100) {
-            cooldowns[playerId] = currentTime
-            if (event.action == Action.RIGHT_CLICK_BLOCK && event.hand == EquipmentSlot.HAND) {
-                if (block == null) {
-                    return
-                } else {
-                    val location = block.location
-                    found = false
-                    for (gameClass in GamesManager.games.keys) {
-                        val gameInstances = GamesManager.games[gameClass] ?: continue
-                        when (gameClass) {
-                            Chess::class -> {
-                                @Suppress("UNCHECKED_CAST")
-                                (gameInstances.values as Collection<BoardGame>).forEach { game ->
-                                    for (board in game.boards.values) {
-                                        val vector = location.block.location.toVector().subtract(board.origin.toVector())
-                                        val dx = vector.dot(board.xAxis).toInt()
-                                        val dy = vector.dot(board.yAxis).toInt()
-                                        val dz = vector.dot(Vector(0.0, 1.0, 0.0)).toInt()
-                                        if (dz in 0..5 && game.isInside(dx, dy)) {
-                                            if (game.move(dx, dy, dz, player)) {
-                                                block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
-                                            }
-                                            return
+        if (event.action == Action.LEFT_CLICK_BLOCK || event.action == Action.LEFT_CLICK_AIR) {
+            val currentTime = System.currentTimeMillis()
+            val player = event.player
+            if (!cooldowns.containsKey(player.uniqueId) || currentTime - cooldowns[player.uniqueId]!! > 100) {
+                cooldowns[player.uniqueId] = currentTime
+                val block = player.rayTraceBlocks(pluginInstance.settingsManager.settings["game_interaction_range"] as Double)?.hitBlock ?: return
+                found = false
+                for (gameClass in GamesManager.games.keys) {
+                    val gameInstances = GamesManager.games[gameClass] ?: continue
+                    when (gameClass) {
+                        Chess::class -> {
+                            @Suppress("UNCHECKED_CAST")
+                            (gameInstances.values as Collection<BoardGame>).forEach { game ->
+                                for (board in game.boards.values) {
+                                    val vector = block.location.toVector().subtract(board.origin.toVector())
+                                    val dx = vector.dot(board.xAxis).toInt()
+                                    val dy = vector.dot(board.yAxis).toInt()
+                                    val dz = vector.dot(Vector(0.0, 1.0, 0.0)).toInt()
+                                    if (dz in 0..5 && game.isInside(dx, dy)) {
+                                        if (game.move(dx, dy, dz, player)) {
+                                            block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
                                         }
+                                        return
                                     }
                                 }
                             }
-                            ScoreFour::class -> {
-                                @Suppress("UNCHECKED_CAST")
-                                (gameInstances.values as Collection<BoardGame>).forEach { game ->
-                                    for (board in game.boards.values) {
-                                        if (location.world != board.origin.world) {
-                                            continue
-                                        }
-                                        val vector = location.block.location.toVector().subtract(board.origin.toVector())
-                                        var dx = vector.dot(board.xAxis).toInt()
-                                        var dy = vector.dot(board.yAxis).toInt()
-                                        if (dx % 2 == 0 && dy % 2 == 0) {
-                                            dx /= 2
-                                            dy /= 2
-                                        } else {
-                                            continue
-                                        }
-                                        val dz = vector.dot(Vector(0.0, 1.0, 0.0)).toInt()
-                                        if (dz in 0..4 && game.isInside(dx, dy)) {
-                                            if (game.move(dx, dy, 0, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
-                                            return
-                                        }
+                        }
+                        ScoreFour::class -> {
+                            @Suppress("UNCHECKED_CAST")
+                            (gameInstances.values as Collection<BoardGame>).forEach { game ->
+                                for (board in game.boards.values) {
+                                    if (block.world != board.origin.world) {
+                                        continue
+                                    }
+                                    val vector = block.location.toVector().subtract(board.origin.toVector())
+                                    var dx = vector.dot(board.xAxis).toInt()
+                                    var dy = vector.dot(board.yAxis).toInt()
+                                    if (dx % 2 == 0 && dy % 2 == 0) {
+                                        dx /= 2
+                                        dy /= 2
+                                    } else {
+                                        continue
+                                    }
+                                    val dz = vector.dot(Vector(0.0, 1.0, 0.0)).toInt()
+                                    if (dz in 0..4 && game.isInside(dx, dy)) {
+                                        if (game.move(dx, dy, 0, player)) block.world.playSound(block.location, Sound.BLOCK_STONE_BUTTON_CLICK_ON, 1.0f, 1.0f)
+                                        return
                                     }
                                 }
                             }
-                            else -> {
-                                @Suppress("UNCHECKED_CAST")
-                                found = simpleGameClick(gameInstances.values as Collection<BoardGame>, block, player)
-                                if (found) return
-                            }
+                        }
+                        else -> {
+                            @Suppress("UNCHECKED_CAST")
+                            found = simpleGameClick(gameInstances.values as Collection<BoardGame>, block, player)
+                            if (found) return
                         }
                     }
                 }

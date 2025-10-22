@@ -48,25 +48,25 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
                                                 .then(
                                                     Commands.argument("cardinal_direction", CardinalDirectionArgument())
                                                         .let { it1 ->
-                                                            when(gameClass) {
+                                                            when (gameClass) {
                                                                 Chess::class, ConnectFour::class, ScoreFour::class -> {
                                                                     it1.executes { ctx -> executor.setupGame(ctx, gameClass) }
                                                                 }
                                                                 else -> it1.then(
-                                                                Commands.argument("orientation", OrientationArgument())
-                                                                    .let { it2 ->
-                                                                        when(gameClass) {
-                                                                            LightsOut::class -> {
-                                                                                it2.then(
-                                                                                    Commands.argument("size", IntegerArgumentType.integer())
-                                                                                        .executes { ctx -> executor.setupGame(ctx, gameClass) }
-                                                                                )
-                                                                            }
-                                                                            else -> {
-                                                                                it2.executes { ctx -> executor.setupGame(ctx, gameClass) }
+                                                                    Commands.argument("orientation", OrientationArgument())
+                                                                        .let { it2 ->
+                                                                            when (gameClass) {
+                                                                                LightsOut::class -> {
+                                                                                    it2.then(
+                                                                                        Commands.argument("size", IntegerArgumentType.integer())
+                                                                                            .executes { ctx -> executor.setupGame(ctx, gameClass) }
+                                                                                    )
+                                                                                }
+                                                                                else -> {
+                                                                                    it2.executes { ctx -> executor.setupGame(ctx, gameClass) }
+                                                                                }
                                                                             }
                                                                         }
-                                                                    }
                                                                 )
                                                             }
                                                         }
