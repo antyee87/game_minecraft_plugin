@@ -57,6 +57,7 @@ class GameCommand(private val pluginInstance: AntGamePlugin, private val command
                                                                         .let { it2 ->
                                                                             when (gameClass) {
                                                                                 LightsOut::class -> {
+                                                                                    it2.executes { ctx -> executor.setupGame(ctx, gameClass) }
                                                                                     it2.then(
                                                                                         Commands.argument("size", IntegerArgumentType.integer())
                                                                                             .executes { ctx -> executor.setupGame(ctx, gameClass) }

@@ -214,6 +214,8 @@ class Go(pluginInstance: AntGamePlugin) :
 
         val color = if (player == 1) "B" else "W"
         sgfContent += ";$color[${'a' + x}${'a' + y}]"
+
+        switchPlayer()
     }
 
     override fun move(
@@ -276,7 +278,6 @@ class Go(pluginInstance: AntGamePlugin) :
                     sgfContent += ";$color[]"
                 }
                 display()
-                switchPlayer()
             }
             return true
         } else {

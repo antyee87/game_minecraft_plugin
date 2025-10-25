@@ -172,7 +172,7 @@ class Executor(private val pluginInstance: AntGamePlugin) {
                                 }
                             )
                         )
-                        .clickEvent(ClickEvent.runCommand("/antgame game_operate $gameClass list $groupName"))
+                        .clickEvent(ClickEvent.runCommand("/antgame game_operate ${GamesManager.gameNames[gameClass]} list $groupName"))
                 )
             }
         } else {
@@ -267,7 +267,7 @@ class Executor(private val pluginInstance: AntGamePlugin) {
     fun getSgf(ctx: CommandContext<CommandSourceStack>): Int {
         val groupName = ctx.getArgument("group_name", String::class.java)
         val sgfText = (GamesManager.games[Go::class]!![groupName] as? Go)?.exportToSGF() ?: throw ERROR_GROUP_NAME.create()
-        ctx.source.sender.sendMessage(
+        ctx.source.executor?.sendMessage(
             Component.text("點此複製sgf", NamedTextColor.GREEN)
                 .decoration(TextDecoration.UNDERLINED, true)
                 .clickEvent(ClickEvent.copyToClipboard(sgfText))
@@ -278,7 +278,7 @@ class Executor(private val pluginInstance: AntGamePlugin) {
                 File("$directoryPath/$groupName.sgf").writeText(sgfText)
                 val sgfShareUrl = pluginInstance.settingsManager.settings["sgf_share_url"] as String
                 if (sgfShareUrl != "") {
-                    ctx.source.sender.sendMessage(
+                    ctx.source.executor?.sendMessage(
                         Component.text("點此下載sgf", NamedTextColor.GREEN)
                             .decoration(TextDecoration.UNDERLINED, true)
                             .clickEvent(ClickEvent.openUrl("$sgfShareUrl/$groupName.sgf"))
